@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Glaceon</string>
+    
+    <!-- Common -->
+    <string name="back">뒤로</string>
+    <string name="cancel">취소</string>
+    <string name="add">추가</string>
+    <string name="delete">삭제</string>
+    <string name="view">보기</string>
+    <string name="manage">관리</string>
+    <string name="view_all">모두 보기</string>
+    <string name="view_details">세부 정보 보기</string>
+    <string name="total">총계</string>
+    <string name="loading">로딩 중...</string>
+    
+    <!-- Billing Screen -->
+    <string name="billing_payments">청구 및 결제</string>
+    <string name="subscription">구독</string>
+    <string name="subscription_active">활성</string>
+    <string name="subscription_canceled">취소됨</string>
+    <string name="plan_glacier_archive">플랜: Glacier Archive Base Plan</string>
+    <string name="next_billing_date">다음 청구일: %1$s</string>
+    <string name="will_be_canceled">기간 종료 시 취소 예정</string>
+    <string name="cancel_subscription">구독 취소</string>
+    <string name="no_subscription">구독이 설정되지 않았습니다</string>
+    <string name="start_subscription">구독 시작</string>
+    <string name="this_month_usage">이번 달 사용량</string>
+    <string name="storage">저장소</string>
+    <string name="uploads">업로드</string>
+    <string name="restores">복원</string>
+    <string name="times">회</string>
+    <string name="base_fee">기본 요금</string>
+    <string name="loading_usage_data">사용량 데이터 로딩 중...</string>
+    <string name="payment_methods">결제 방법</string>
+    <string name="no_payment_methods">등록된 결제 방법이 없습니다</string>
+    <string name="add_payment_method">결제 방법 추가</string>
+    <string name="invoices">청구서</string>
+    <string name="latest_invoices">최신 청구서</string>
+    <string name="view_payment_history">과거 청구서 및 결제 내역을 확인할 수 있습니다</string>
+    
+    <!-- Payment Method Screen -->
+    <string name="no_payment_methods_desc">서비스를 이용하려면 신용카드를 추가하세요</string>
+    <string name="expires">만료일: %1$s</string>
+    <string name="card_number">카드 번호</string>
+    <string name="month">월</string>
+    <string name="year">년</string>
+    <string name="test_environment_warning">※ 이것은 테스트 환경입니다. 실제 카드 정보를 입력하지 마세요.</string>
+    
+    <!-- Usage Screen -->
+    <string name="usage_billing">사용량 및 청구</string>
+    <string name="target_month">대상 월</string>
+    <string name="this_month_total_cost">이번 달 총 비용</string>
+    <string name="usage_details">사용량 세부 정보</string>
+    <string name="storage_usage">저장소 사용량</string>
+    <string name="storage_usage_desc">저장된 파일의 총 용량</string>
+    <string name="upload_count">업로드 횟수</string>
+    <string name="upload_count_desc">이번 달 업로드한 파일 수</string>
+    <string name="restore_count">복원 횟수</string>
+    <string name="restore_count_desc">이번 달 복원한 파일 수</string>
+    <string name="cost_breakdown">비용 내역</string>
+    <string name="base_fee_desc">월 기본 요금</string>
+    <string name="storage_fee">저장소 요금</string>
+    <string name="upload_fee">업로드 요금</string>
+    <string name="restore_fee">복원 요금</string>
+    <string name="loading_cost_data">비용 데이터 로딩 중...</string>
+    <string name="pricing_structure">요금 체계</string>
+    <string name="base_fee_price">$5.00/월</string>
+    <string name="storage_price">$0.01/GB/월</string>
+    <string name="upload_price">$0.05/회</string>
+    <string name="restore_price">$0.10/회</string>
+    <string name="base_fee_price_desc">기본 서비스 이용 요금</string>
+    <string name="storage_price_desc">저장된 파일 용량에 따라 과금</string>
+    <string name="upload_price_desc">파일 업로드당 과금</string>
+    <string name="restore_price_desc">파일 복원당 과금</string>
+    
+    <!-- Invoice Screen -->
+    <string name="no_invoices">청구서가 없습니다</string>
+    <string name="no_invoices_desc">구독을 시작하면 청구서가 표시됩니다</string>
+    <string name="invoice_number">청구서 #%1$s</string>
+    <string name="billing_period">청구 기간: %1$s - %2$s</string>
+    <string name="paid">결제 완료</string>
+    <string name="due">미결제</string>
+    <string name="pdf">PDF</string>
+    <string name="invoice_status_paid">결제 완료</string>
+    <string name="invoice_status_open">미결제</string>
+    <string name="invoice_status_draft">초안</string>
+    <string name="invoice_status_void">무효</string>
+</resources>

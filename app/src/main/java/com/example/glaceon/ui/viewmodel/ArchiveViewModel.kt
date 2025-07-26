@@ -1,0 +1,231 @@
+package com.example.glaceon.ui.viewmodel
+
+import android.app.Application
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.net.Uri
+import android.util.Log
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.glaceon.data.model.ArchiveItem
+import com.example.glaceon.data.model.ArchiveStatus
+import com.example.glaceon.data.repository.ArchiveRepository
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+
+class ArchiveViewModel(application: Application) : AndroidViewModel(application) {
+    
+    private val archiveRepository = ArchiveRepository(application)
+    
+    private val _uiState = MutableStateFlow(ArchiveUiState())
+    val uiState: StateFlow<ArchiveUiState> = _uiState.asStateFlow()
+    
+    private val _archives = MutableStateFlow<List<ArchiveItem>>(emptyList())
+    val archives: StateFlow<List<ArchiveItem>> = _archives.asStateFlow()
+    
+    // サムネイルキャッシュ
+    private val _thumbnailCache = MutableStateFlow<Map<String, Bitmap>>(emptyMap())
+    val thumbnailCache: StateFlow<Map<String, Bitmap>> = _thumbnailCache.asStateFlow()
+    
+    fun loadArchives(token: String) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            
+            archiveRepository.getArchiveList(token).fold(
+                onSuccess = { response ->
+                    _archives.value = response.archives
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        hasMore = response.hasMore,
+                        continuationToken = response.continuationToken
+                    )
+                },
+                onFailure = { error ->
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        error = error.message
+                    )
+                }
+            )
+        }
+    }
+    
+    fun uploadFile(
+        token: String,
+        fileUri: Uri,
+        fileName: String,
+        description: String? = null,
+        category: String? = null
+    ) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isUploading = true, error = null)
+            
+            val metadata = mutableMapOf<String, String>().apply {
+                description?.let { put("description", it) }
+                category?.let { put("category", it) }
+                put("uploadedFrom", "android-app")
+            }
+            
+            archiveRepository.uploadFile(token, fileUri, fileName, metadata).fold(
+                onSuccess = { response ->
+                    _uiState.value = _uiState.value.copy(
+                        isUploading = false,
+                        message = "File uploaded successfully: ${response.archiveId}"
+                    )
+                    
+                    // Add the uploaded file to the archive list immediately
+                    val newArchiveItem = ArchiveItem(
+                        archiveId = response.archiveId,
+                        fileName = fileName,
+                        fileSize = try {
+                            val inputStream = getApplication<Application>().contentResolver.openInputStream(fileUri)
+                            val size = inputStream?.available()?.toLong() ?: 0L
+                            inputStream?.close()
+                            size
+                        } catch (e: Exception) {
+                            0L
+                        },
+                        uploadTimestamp = kotlinx.datetime.Clock.System.now().toString(),
+                        status = "ARCHIVED",
+                        metadata = metadata,
+                        description = description,
+                        category = category
+                    )
+                    
+                    // Add to the beginning of the list
+                    _archives.value = listOf(newArchiveItem) + _archives.value
+                },
+                onFailure = { error ->
+                    _uiState.value = _uiState.value.copy(
+                        isUploading = false,
+                        error = error.message
+                    )
+                }
+            )
+        }
+    }
+    
+    fun restoreArchive(token: String, archiveId: String) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            
+            archiveRepository.restoreArchive(token, archiveId).fold(
+                onSuccess = { response ->
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        message = when (response.status) {
+                            "restored" -> if (response.content != null) {
+                                "File restored and saved to Downloads folder: ${response.fileName}"
+                            } else {
+                                "File is ready for download"
+                            }
+                            "restoring" -> "Restore in progress. Please check back later."
+                            "restore_initiated" -> "Restore request initiated. Please check back in 12-48 hours."
+                            else -> response.message
+                        }
+                    )
+                    
+                    // Update the specific archive status
+                    _archives.value = _archives.value.map { archive ->
+                        if (archive.archiveId == archiveId) {
+                            archive.copy(
+                                status = when (response.status) {
+                                    "restored" -> "RESTORED"
+                                    "restoring" -> "RESTORING"
+                                    "restore_initiated" -> "RESTORING"
+                                    else -> archive.status
+                                }
+                            )
+                        } else {
+                            archive
+                        }
+                    }
+                },
+                onFailure = { error ->
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        error = error.message
+                    )
+                }
+            )
+        }
+    }
+    
+    fun deleteArchive(token: String, archiveId: String) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            
+            archiveRepository.deleteArchive(token, archiveId).fold(
+                onSuccess = {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        message = "Archive deleted successfully"
+                    )
+                    
+                    // Remove the archive from the list
+                    _archives.value = _archives.value.filter { it.archiveId != archiveId }
+                },
+                onFailure = { error ->
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        error = error.message
+                    )
+                }
+            )
+        }
+    }
+    
+    fun clearError() {
+        _uiState.value = _uiState.value.copy(error = null)
+    }
+    
+    fun clearMessage() {
+        _uiState.value = _uiState.value.copy(message = null)
+    }
+    
+    fun loadThumbnail(token: String, archiveId: String) {
+        // キャッシュにある場合は何もしない
+        if (_thumbnailCache.value.containsKey(archiveId)) {
+            Log.d("ArchiveViewModel", "Thumbnail already cached for $archiveId")
+            return
+        }
+        
+        Log.d("ArchiveViewModel", "Loading thumbnail for $archiveId")
+        viewModelScope.launch {
+            archiveRepository.getThumbnail(token, archiveId).fold(
+                onSuccess = { thumbnailBytes ->
+                    Log.d("ArchiveViewModel", "Thumbnail received for $archiveId, size: ${thumbnailBytes.size} bytes")
+                    try {
+                        val bitmap = BitmapFactory.decodeByteArray(thumbnailBytes, 0, thumbnailBytes.size)
+                        if (bitmap != null) {
+                            Log.d("ArchiveViewModel", "Thumbnail decoded successfully for $archiveId: ${bitmap.width}x${bitmap.height}")
+                            _thumbnailCache.value = _thumbnailCache.value + (archiveId to bitmap)
+                        } else {
+                            Log.e("ArchiveViewModel", "Failed to decode thumbnail bitmap for $archiveId")
+                        }
+                    } catch (e: Exception) {
+                        Log.e("ArchiveViewModel", "Exception decoding thumbnail for $archiveId: ${e.message}")
+                    }
+                },
+                onFailure = { error ->
+                    Log.e("ArchiveViewModel", "Failed to load thumbnail for $archiveId: ${error.message}")
+                }
+            )
+        }
+    }
+    
+    fun getThumbnail(archiveId: String): Bitmap? {
+        return _thumbnailCache.value[archiveId]
+    }
+}
+
+data class ArchiveUiState(
+    val isLoading: Boolean = false,
+    val isUploading: Boolean = false,
+    val hasMore: Boolean = false,
+    val continuationToken: String? = null,
+    val error: String? = null,
+    val message: String? = null
+)

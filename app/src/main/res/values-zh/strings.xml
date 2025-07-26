@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Glaceon</string>
+    
+    <!-- Common -->
+    <string name="back">返回</string>
+    <string name="cancel">取消</string>
+    <string name="add">添加</string>
+    <string name="delete">删除</string>
+    <string name="view">查看</string>
+    <string name="manage">管理</string>
+    <string name="view_all">查看全部</string>
+    <string name="view_details">查看详情</string>
+    <string name="total">总计</string>
+    <string name="loading">加载中...</string>
+    
+    <!-- Billing Screen -->
+    <string name="billing_payments">账单与付款</string>
+    <string name="subscription">订阅</string>
+    <string name="subscription_active">活跃</string>
+    <string name="subscription_canceled">已取消</string>
+    <string name="plan_glacier_archive">套餐：Glacier Archive Base Plan</string>
+    <string name="next_billing_date">下次账单日期：%1$s</string>
+    <string name="will_be_canceled">将在期间结束时取消</string>
+    <string name="cancel_subscription">取消订阅</string>
+    <string name="no_subscription">未设置订阅</string>
+    <string name="start_subscription">开始订阅</string>
+    <string name="this_month_usage">本月使用量</string>
+    <string name="storage">存储</string>
+    <string name="uploads">上传</string>
+    <string name="restores">恢复</string>
+    <string name="times">次</string>
+    <string name="base_fee">基础费用</string>
+    <string name="loading_usage_data">正在加载使用量数据...</string>
+    <string name="payment_methods">付款方式</string>
+    <string name="no_payment_methods">未注册付款方式</string>
+    <string name="add_payment_method">添加付款方式</string>
+    <string name="invoices">发票</string>
+    <string name="latest_invoices">最新发票</string>
+    <string name="view_payment_history">查看过往发票和付款历史</string>
+    
+    <!-- Payment Method Screen -->
+    <string name="no_payment_methods_desc">添加信用卡以开始使用服务</string>
+    <string name="expires">有效期：%1$s</string>
+    <string name="card_number">卡号</string>
+    <string name="month">月</string>
+    <string name="year">年</string>
+    <string name="test_environment_warning">※ 这是测试环境。请勿输入真实卡片信息。</string>
+    
+    <!-- Usage Screen -->
+    <string name="usage_billing">使用量与账单</string>
+    <string name="target_month">目标月份</string>
+    <string name="this_month_total_cost">本月总费用</string>
+    <string name="usage_details">使用量详情</string>
+    <string name="storage_usage">存储使用量</string>
+    <string name="storage_usage_desc">已存储文件的总容量</string>
+    <string name="upload_count">上传次数</string>
+    <string name="upload_count_desc">本月上传的文件数</string>
+    <string name="restore_count">恢复次数</string>
+    <string name="restore_count_desc">本月恢复的文件数</string>
+    <string name="cost_breakdown">费用明细</string>
+    <string name="base_fee_desc">月基础费用</string>
+    <string name="storage_fee">存储费用</string>
+    <string name="upload_fee">上传费用</string>
+    <string name="restore_fee">恢复费用</string>
+    <string name="loading_cost_data">正在加载费用数据...</string>
+    <string name="pricing_structure">价格结构</string>
+    <string name="base_fee_price">$5.00/月</string>
+    <string name="storage_price">$0.01/GB/月</string>
+    <string name="upload_price">$0.05/次</string>
+    <string name="restore_price">$0.10/次</string>
+    <string name="base_fee_price_desc">基础服务使用费</string>
+    <string name="storage_price_desc">根据存储文件容量收费</string>
+    <string name="upload_price_desc">按文件上传次数收费</string>
+    <string name="restore_price_desc">按文件恢复次数收费</string>
+    
+    <!-- Invoice Screen -->
+    <string name="no_invoices">暂无发票</string>
+    <string name="no_invoices_desc">开始订阅后将显示发票</string>
+    <string name="invoice_number">发票 #%1$s</string>
+    <string name="billing_period">账单周期：%1$s - %2$s</string>
+    <string name="paid">已付款</string>
+    <string name="due">待付款</string>
+    <string name="pdf">PDF</string>
+    <string name="invoice_status_paid">已付款</string>
+    <string name="invoice_status_open">待付款</string>
+    <string name="invoice_status_draft">草稿</string>
+    <string name="invoice_status_void">无效</string>
+</resources>

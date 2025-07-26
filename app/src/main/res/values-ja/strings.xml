@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Glaceon</string>
+    
+    <!-- Common -->
+    <string name="back">戻る</string>
+    <string name="cancel">キャンセル</string>
+    <string name="add">追加</string>
+    <string name="delete">削除</string>
+    <string name="view">表示</string>
+    <string name="manage">管理</string>
+    <string name="view_all">すべて表示</string>
+    <string name="view_details">詳細を表示</string>
+    <string name="total">合計</string>
+    <string name="loading">読み込み中...</string>
+    
+    <!-- Billing Screen -->
+    <string name="billing_payments">請求・支払い</string>
+    <string name="subscription">サブスクリプション</string>
+    <string name="subscription_active">アクティブ</string>
+    <string name="subscription_canceled">キャンセル済み</string>
+    <string name="plan_glacier_archive">プラン: Glacier Archive Base Plan</string>
+    <string name="next_billing_date">次回請求日: %1$s</string>
+    <string name="will_be_canceled">期間終了時にキャンセル予定</string>
+    <string name="cancel_subscription">サブスクリプションをキャンセル</string>
+    <string name="no_subscription">サブスクリプションが設定されていません</string>
+    <string name="start_subscription">サブスクリプションを開始</string>
+    <string name="this_month_usage">今月の使用量</string>
+    <string name="storage">ストレージ</string>
+    <string name="uploads">アップロード</string>
+    <string name="restores">復元</string>
+    <string name="times">回</string>
+    <string name="base_fee">基本料金</string>
+    <string name="loading_usage_data">使用量データを読み込み中...</string>
+    <string name="payment_methods">支払い方法</string>
+    <string name="no_payment_methods">支払い方法が登録されていません</string>
+    <string name="add_payment_method">支払い方法を追加</string>
+    <string name="invoices">請求書</string>
+    <string name="latest_invoices">最新の請求書</string>
+    <string name="view_payment_history">過去の請求書と支払い履歴を確認できます</string>
+    
+    <!-- Payment Method Screen -->
+    <string name="no_payment_methods_desc">クレジットカードを追加してサービスを利用しましょう</string>
+    <string name="expires">有効期限: %1$s</string>
+    <string name="card_number">カード番号</string>
+    <string name="month">月</string>
+    <string name="year">年</string>
+    <string name="test_environment_warning">※ このアプリはテスト環境です。実際のカード情報は入力しないでください。</string>
+    
+    <!-- Usage Screen -->
+    <string name="usage_billing">使用量・料金</string>
+    <string name="target_month">対象月</string>
+    <string name="this_month_total_cost">今月の合計料金</string>
+    <string name="usage_details">使用量詳細</string>
+    <string name="storage_usage">ストレージ使用量</string>
+    <string name="storage_usage_desc">保存されているファイルの総容量</string>
+    <string name="upload_count">アップロード回数</string>
+    <string name="upload_count_desc">今月アップロードしたファイル数</string>
+    <string name="restore_count">復元回数</string>
+    <string name="restore_count_desc">今月復元したファイル数</string>
+    <string name="cost_breakdown">料金内訳</string>
+    <string name="base_fee_desc">月額基本料金</string>
+    <string name="storage_fee">ストレージ料金</string>
+    <string name="upload_fee">アップロード料金</string>
+    <string name="restore_fee">復元料金</string>
+    <string name="loading_cost_data">料金データを読み込み中...</string>
+    <string name="pricing_structure">料金体系</string>
+    <string name="base_fee_price">$5.00/月</string>
+    <string name="storage_price">$0.01/GB/月</string>
+    <string name="upload_price">$0.05/回</string>
+    <string name="restore_price">$0.10/回</string>
+    <string name="base_fee_price_desc">サービス利用の基本料金</string>
+    <string name="storage_price_desc">保存されているファイルの容量に応じて課金</string>
+    <string name="upload_price_desc">ファイルをアップロードする度に課金</string>
+    <string name="restore_price_desc">ファイルを復元する度に課金</string>
+    
+    <!-- Invoice Screen -->
+    <string name="no_invoices">請求書がありません</string>
+    <string name="no_invoices_desc">サブスクリプションを開始すると請求書が表示されます</string>
+    <string name="invoice_number">請求書 #%1$s</string>
+    <string name="billing_period">請求期間: %1$s - %2$s</string>
+    <string name="paid">支払済み</string>
+    <string name="due">未払い</string>
+    <string name="pdf">PDF</string>
+    <string name="invoice_status_paid">支払済み</string>
+    <string name="invoice_status_open">未払い</string>
+    <string name="invoice_status_draft">下書き</string>
+    <string name="invoice_status_void">無効</string>
+</resources>
