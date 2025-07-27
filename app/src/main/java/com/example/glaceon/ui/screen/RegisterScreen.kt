@@ -193,6 +193,50 @@ fun RegisterScreen(
                 )
             }
             
+            // Password requirements
+            if (password.isNotBlank()) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant
+                    )
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Text(
+                            text = "Password Requirements:",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        
+                        val requirements = listOf(
+                            "At least 8 characters" to (password.length >= 8),
+                            "One uppercase letter" to password.any { it.isUpperCase() },
+                            "One lowercase letter" to password.any { it.isLowerCase() },
+                            "One number" to password.any { it.isDigit() }
+                        )
+                        
+                        requirements.forEach { (requirement, met) ->
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.padding(vertical = 2.dp)
+                            ) {
+                                Text(
+                                    text = if (met) "✓" else "✗",
+                                    color = if (met) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
+                                    modifier = Modifier.padding(end = 8.dp)
+                                )
+                                Text(
+                                    text = requirement,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = if (met) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.error
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+            
             Spacer(modifier = Modifier.height(24.dp))
             
             Button(
@@ -210,7 +254,11 @@ fun RegisterScreen(
                         username.isNotBlank() && 
                         email.isNotBlank() && 
                         password.isNotBlank() && 
-                        password == confirmPassword
+                        password == confirmPassword &&
+                        password.length >= 8 &&
+                        password.any { it.isUpperCase() } &&
+                        password.any { it.isLowerCase() } &&
+                        password.any { it.isDigit() }
             ) {
                 if (uiState.isLoading) {
                     CircularProgressIndicator(
