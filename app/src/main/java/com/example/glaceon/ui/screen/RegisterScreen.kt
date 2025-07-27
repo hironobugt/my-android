@@ -2,11 +2,15 @@ package com.example.glaceon.ui.screen
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
@@ -116,11 +120,20 @@ fun RegisterScreen(
                 Text("Cancel Registration")
             }
         } else {
+            val focusManager = LocalFocusManager.current
+            
             // Registration form
             OutlinedTextField(
                 value = username,
                 onValueChange = { username = it },
                 label = { Text("Username") },
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Text,
+                    imeAction = ImeAction.Next
+                ),
+                keyboardActions = KeyboardActions(
+                    onNext = { focusManager.moveFocus(FocusDirection.Down) }
+                ),
                 modifier = Modifier.fillMaxWidth(),
                 enabled = !uiState.isLoading
             )
@@ -131,7 +144,13 @@ fun RegisterScreen(
                 value = email,
                 onValueChange = { email = it },
                 label = { Text("Email") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Email,
+                    imeAction = ImeAction.Next
+                ),
+                keyboardActions = KeyboardActions(
+                    onNext = { focusManager.moveFocus(FocusDirection.Down) }
+                ),
                 modifier = Modifier.fillMaxWidth(),
                 enabled = !uiState.isLoading
             )
@@ -146,6 +165,13 @@ fun RegisterScreen(
                     value = givenName,
                     onValueChange = { givenName = it },
                     label = { Text("First Name") },
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Text,
+                        imeAction = ImeAction.Next
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onNext = { focusManager.moveFocus(FocusDirection.Right) }
+                    ),
                     modifier = Modifier.weight(1f),
                     enabled = !uiState.isLoading
                 )
@@ -154,6 +180,13 @@ fun RegisterScreen(
                     value = familyName,
                     onValueChange = { familyName = it },
                     label = { Text("Last Name") },
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Text,
+                        imeAction = ImeAction.Next
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onNext = { focusManager.moveFocus(FocusDirection.Down) }
+                    ),
                     modifier = Modifier.weight(1f),
                     enabled = !uiState.isLoading
                 )
@@ -166,7 +199,13 @@ fun RegisterScreen(
                 onValueChange = { password = it },
                 label = { Text("Password") },
                 visualTransformation = PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Password,
+                    imeAction = ImeAction.Next
+                ),
+                keyboardActions = KeyboardActions(
+                    onNext = { focusManager.moveFocus(FocusDirection.Down) }
+                ),
                 modifier = Modifier.fillMaxWidth(),
                 enabled = !uiState.isLoading
             )
@@ -178,7 +217,31 @@ fun RegisterScreen(
                 onValueChange = { confirmPassword = it },
                 label = { Text("Confirm Password") },
                 visualTransformation = PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Password,
+                    imeAction = ImeAction.Done
+                ),
+                keyboardActions = KeyboardActions(
+                    onDone = {
+                        if (!uiState.isLoading && 
+                            username.isNotBlank() && 
+                            email.isNotBlank() && 
+                            password.isNotBlank() && 
+                            password == confirmPassword &&
+                            password.length >= 8 &&
+                            password.any { it.isUpperCase() } &&
+                            password.any { it.isLowerCase() } &&
+                            password.any { it.isDigit() }) {
+                            authViewModel.signUp(
+                                username = username,
+                                password = password,
+                                email = email,
+                                givenName = givenName.takeIf { it.isNotBlank() },
+                                familyName = familyName.takeIf { it.isNotBlank() }
+                            )
+                        }
+                    }
+                ),
                 modifier = Modifier.fillMaxWidth(),
                 enabled = !uiState.isLoading,
                 isError = confirmPassword.isNotBlank() && password != confirmPassword

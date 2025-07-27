@@ -2,11 +2,15 @@ package com.example.glaceon.ui.screen
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
@@ -54,6 +58,8 @@ fun ForgotPasswordScreen(
         )
         
         if (uiState.needsPasswordReset) {
+            val focusManager = LocalFocusManager.current
+            
             // Password reset confirmation screen
             Text(
                 text = "Please check your email and enter the confirmation code along with your new password",
@@ -65,7 +71,13 @@ fun ForgotPasswordScreen(
                 value = confirmationCode,
                 onValueChange = { confirmationCode = it },
                 label = { Text("Confirmation Code") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Number,
+                    imeAction = ImeAction.Next
+                ),
+                keyboardActions = KeyboardActions(
+                    onNext = { focusManager.moveFocus(FocusDirection.Down) }
+                ),
                 modifier = Modifier.fillMaxWidth(),
                 enabled = !uiState.isLoading
             )
@@ -77,7 +89,13 @@ fun ForgotPasswordScreen(
                 onValueChange = { newPassword = it },
                 label = { Text("New Password") },
                 visualTransformation = PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Password,
+                    imeAction = ImeAction.Next
+                ),
+                keyboardActions = KeyboardActions(
+                    onNext = { focusManager.moveFocus(FocusDirection.Down) }
+                ),
                 modifier = Modifier.fillMaxWidth(),
                 enabled = !uiState.isLoading
             )
@@ -89,7 +107,24 @@ fun ForgotPasswordScreen(
                 onValueChange = { confirmNewPassword = it },
                 label = { Text("Confirm New Password") },
                 visualTransformation = PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Password,
+                    imeAction = ImeAction.Done
+                ),
+                keyboardActions = KeyboardActions(
+                    onDone = {
+                        if (!uiState.isLoading && 
+                            confirmationCode.isNotBlank() && 
+                            newPassword.isNotBlank() && 
+                            newPassword == confirmNewPassword &&
+                            newPassword.length >= 8 &&
+                            newPassword.any { it.isUpperCase() } &&
+                            newPassword.any { it.isLowerCase() } &&
+                            newPassword.any { it.isDigit() }) {
+                            authViewModel.resetPassword(confirmationCode, newPassword)
+                        }
+                    }
+                ),
                 modifier = Modifier.fillMaxWidth(),
                 enabled = !uiState.isLoading,
                 isError = confirmNewPassword.isNotBlank() && newPassword != confirmNewPassword
@@ -197,7 +232,17 @@ fun ForgotPasswordScreen(
                 value = username,
                 onValueChange = { username = it },
                 label = { Text("Username or Email") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Email,
+                    imeAction = ImeAction.Done
+                ),
+                keyboardActions = KeyboardActions(
+                    onDone = {
+                        if (username.isNotBlank() && !uiState.isLoading) {
+                            authViewModel.forgotPassword(username)
+                        }
+                    }
+                ),
                 modifier = Modifier.fillMaxWidth(),
                 enabled = !uiState.isLoading
             )
