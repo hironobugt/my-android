@@ -226,10 +226,10 @@ class BillingRepository(private val context: Context) {
             ),
             totalCost = 8.75,
             pricing = PricingInfo(
-                storage = 0.01,
-                upload = 0.05,
-                restore = 0.10,
-                baseFee = 5.00
+                storage = 0.012,
+                upload = 0.09,
+                restore = 0.40,
+                baseFee = 3.00
             )
         )
     }

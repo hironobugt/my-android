@@ -290,19 +290,19 @@ fun CostBreakdownCard(usage: com.example.glaceon.ui.viewmodel.Usage?) {
                 CostBreakdownItem(
                         label = stringResource(R.string.storage_fee),
                         amount = usage.costs["storage"] ?: 0.0,
-                        description = "${String.format("%.1f", usage.storageGB)} GB × $0.002"
+                        description = "${String.format("%.1f", usage.storageGB)} GB × $0.012"
                 )
 
                 CostBreakdownItem(
                         label = stringResource(R.string.upload_fee),
                         amount = usage.costs["uploads"] ?: 0.0,
-                        description = "${usage.uploadCount} ${stringResource(R.string.times)} (${String.format("%.2f", usage.uploadGB)} GB × $0.01)"
+                        description = "${usage.uploadCount} ${stringResource(R.string.times)} (${String.format("%.2f", usage.uploadGB)} GB × $0.09)"
                 )
 
                 CostBreakdownItem(
                         label = stringResource(R.string.restore_fee),
                         amount = usage.costs["restores"] ?: 0.0,
-                        description = "${usage.restoreCount} ${stringResource(R.string.times)} (${String.format("%.2f", usage.restoreGB)} GB × $0.05)"
+                        description = "${usage.restoreCount} ${stringResource(R.string.times)} (${String.format("%.2f", usage.restoreGB)} GB × $0.40)"
                 )
 
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
