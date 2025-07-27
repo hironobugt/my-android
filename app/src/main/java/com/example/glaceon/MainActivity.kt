@@ -14,6 +14,7 @@ import com.example.glaceon.ui.screen.ArchiveListScreen
 import com.example.glaceon.ui.screen.AutoUploadSettingsScreen
 import com.example.glaceon.ui.screen.AutoUploadTestScreen
 import com.example.glaceon.ui.screen.BillingScreen
+import com.example.glaceon.ui.screen.DeleteAccountScreen
 import com.example.glaceon.ui.screen.ForgotPasswordScreen
 import com.example.glaceon.ui.screen.InvoiceScreen
 import com.example.glaceon.ui.screen.LoginScreen
@@ -116,6 +117,7 @@ fun GlaceonApp() {
                     onNavigateToPaymentMethods = { navController.navigate("payment_methods") },
                     onNavigateToUsage = { navController.navigate("usage") },
                     onNavigateToInvoices = { navController.navigate("invoices") },
+                    onNavigateToDeleteAccount = { navController.navigate("delete_account") },
                     authViewModel = authViewModel
             )
         }
@@ -137,6 +139,19 @@ fun GlaceonApp() {
         composable("invoices") {
             InvoiceScreen(
                     onNavigateBack = { navController.popBackStack() },
+                    authViewModel = authViewModel
+            )
+        }
+
+        composable("delete_account") {
+            DeleteAccountScreen(
+                    onNavigateBack = { navController.popBackStack() },
+                    onAccountDeleted = {
+                        // アカウント削除完了後はログイン画面に戻る
+                        navController.navigate("login") {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    },
                     authViewModel = authViewModel
             )
         }

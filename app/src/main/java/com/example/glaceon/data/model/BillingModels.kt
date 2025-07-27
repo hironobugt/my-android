@@ -9,7 +9,9 @@ data class BillingRequest(
     val name: String? = null,
     val paymentMethodId: String? = null,
     val priceId: String? = null,
-    val limit: Int? = null
+    val limit: Int? = null,
+    val confirmPassword: String? = null,
+    val reason: String? = null
 )
 
 data class UsageRequest(

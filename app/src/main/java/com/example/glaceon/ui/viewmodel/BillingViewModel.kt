@@ -306,4 +306,23 @@ class BillingViewModel(application: Application) : AndroidViewModel(application)
     fun formatCurrency(amountCents: Int): String {
         return String.format("$%.2f", amountCents / 100.0)
     }
+
+    fun deleteAccount(token: String, confirmPassword: String, reason: String?) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            _error.value = null
+            
+            billingRepository.deleteAccount(token, confirmPassword, reason)
+                .fold(
+                    onSuccess = { response ->
+                        _isLoading.value = false
+                        // アカウント削除成功 - アプリを終了またはログイン画面に戻る
+                    },
+                    onFailure = { error ->
+                        _error.value = error.message
+                        _isLoading.value = false
+                    }
+                )
+        }
+    }
 }

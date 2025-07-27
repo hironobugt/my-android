@@ -30,6 +30,12 @@ data class ResetPasswordRequest(
     val newPassword: String
 )
 
+data class DeleteAccountRequest(
+    val action: String = "delete-account",
+    val confirmPassword: String,
+    val reason: String? = null
+)
+
 data class AuthResponse(
     val accessToken: String,
     val refreshToken: String,
