@@ -29,7 +29,7 @@ class ArchiveViewModel(application: Application) : AndroidViewModel(application)
     private val _thumbnailCache = MutableStateFlow<Map<String, Bitmap>>(emptyMap())
     val thumbnailCache: StateFlow<Map<String, Bitmap>> = _thumbnailCache.asStateFlow()
     
-    fun loadArchives(token: String) {
+    fun loadArchives(token: String, refresh: Boolean = false) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
             
@@ -45,6 +45,40 @@ class ArchiveViewModel(application: Application) : AndroidViewModel(application)
                 onFailure = { error ->
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
+                        error = error.message
+                    )
+                }
+            )
+        }
+    }
+    
+    fun loadMoreArchives(token: String) {
+        val currentState = _uiState.value
+        
+        // 既にロード中、または追加データがない場合は何もしない
+        if (currentState.isLoading || !currentState.hasMore || currentState.continuationToken == null) {
+            return
+        }
+        
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoadingMore = true, error = null)
+            
+            archiveRepository.getArchiveList(
+                token = token,
+                continuationToken = currentState.continuationToken
+            ).fold(
+                onSuccess = { response ->
+                    // 既存のリストに新しいアイテムを追加
+                    _archives.value = _archives.value + response.archives
+                    _uiState.value = _uiState.value.copy(
+                        isLoadingMore = false,
+                        hasMore = response.hasMore,
+                        continuationToken = response.continuationToken
+                    )
+                },
+                onFailure = { error ->
+                    _uiState.value = _uiState.value.copy(
+                        isLoadingMore = false,
                         error = error.message
                     )
                 }
@@ -223,6 +257,7 @@ class ArchiveViewModel(application: Application) : AndroidViewModel(application)
 
 data class ArchiveUiState(
     val isLoading: Boolean = false,
+    val isLoadingMore: Boolean = false,
     val isUploading: Boolean = false,
     val hasMore: Boolean = false,
     val continuationToken: String? = null,

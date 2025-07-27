@@ -122,6 +122,8 @@ data class UsageInfo(
     val storageGB: Double,
     val uploadCount: Int,
     val restoreCount: Int,
+    val uploadGB: Double = 0.0,
+    val restoreGB: Double = 0.0,
     val totalCost: Double
 )
 

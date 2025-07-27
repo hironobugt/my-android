@@ -14,6 +14,7 @@ import com.example.glaceon.ui.screen.ArchiveListScreen
 import com.example.glaceon.ui.screen.AutoUploadSettingsScreen
 import com.example.glaceon.ui.screen.AutoUploadTestScreen
 import com.example.glaceon.ui.screen.BillingScreen
+import com.example.glaceon.ui.screen.ForgotPasswordScreen
 import com.example.glaceon.ui.screen.InvoiceScreen
 import com.example.glaceon.ui.screen.LoginScreen
 import com.example.glaceon.ui.screen.PaymentMethodScreen
@@ -37,7 +38,12 @@ fun GlaceonApp() {
     val authState by authViewModel.uiState.collectAsState()
 
     // Determine start destination based on auth state
-    val startDestination = if (authState.isAuthenticated) "archive_list" else "login"
+    val startDestination = when {
+        authState.isAuthenticated -> "archive_list"
+        authState.needsConfirmation -> "register" // 認証コード入力画面に戻る
+        authState.needsPasswordReset -> "forgot_password" // パスワードリセット画面に戻る
+        else -> "login"
+    }
 
     NavHost(navController = navController, startDestination = startDestination) {
         composable("login") {
@@ -45,6 +51,10 @@ fun GlaceonApp() {
                     onNavigateToRegister = {
                         authViewModel.resetRegistrationState()
                         navController.navigate("register")
+                    },
+                    onNavigateToForgotPassword = {
+                        authViewModel.resetAuthState()
+                        navController.navigate("forgot_password")
                     },
                     onLoginSuccess = {
                         navController.navigate("archive_list") {
@@ -59,6 +69,15 @@ fun GlaceonApp() {
             RegisterScreen(
                     onNavigateToLogin = {
                         navController.navigate("login") { popUpTo("register") { inclusive = true } }
+                    },
+                    authViewModel = authViewModel
+            )
+        }
+
+        composable("forgot_password") {
+            ForgotPasswordScreen(
+                    onNavigateToLogin = {
+                        navController.navigate("login") { popUpTo("forgot_password") { inclusive = true } }
                     },
                     authViewModel = authViewModel
             )

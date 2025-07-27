@@ -16,6 +16,7 @@ import com.example.glaceon.ui.viewmodel.AuthViewModel
 @Composable
 fun LoginScreen(
     onNavigateToRegister: () -> Unit,
+    onNavigateToForgotPassword: () -> Unit,
     onLoginSuccess: () -> Unit,
     authViewModel: AuthViewModel = viewModel()
 ) {
@@ -100,11 +101,23 @@ fun LoginScreen(
         
         Spacer(modifier = Modifier.height(16.dp))
         
-        TextButton(
-            onClick = onNavigateToRegister,
-            enabled = !uiState.isLoading
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text("Don't have an account? Sign Up")
+            TextButton(
+                onClick = onNavigateToForgotPassword,
+                enabled = !uiState.isLoading
+            ) {
+                Text("Forgot Password?")
+            }
+            
+            TextButton(
+                onClick = onNavigateToRegister,
+                enabled = !uiState.isLoading
+            ) {
+                Text("Sign Up")
+            }
         }
         
         // Error display

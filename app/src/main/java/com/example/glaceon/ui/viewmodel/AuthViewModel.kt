@@ -22,6 +22,7 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
     
     init {
         checkAuthStatus()
+        restorePendingStates()
     }
     
     private fun checkAuthStatus() {
@@ -37,6 +38,21 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
                     }
                 )
             }
+        }
+    }
+    
+    private fun restorePendingStates() {
+        viewModelScope.launch {
+            // 未完了の登録状態を復元
+            val pendingConfirmation = authRepository.getPendingConfirmation()
+            val pendingPasswordReset = authRepository.getPendingPasswordReset()
+            
+            _uiState.value = _uiState.value.copy(
+                needsConfirmation = pendingConfirmation != null,
+                pendingUsername = pendingConfirmation,
+                needsPasswordReset = pendingPasswordReset != null,
+                pendingResetUsername = pendingPasswordReset
+            )
         }
     }
     
@@ -80,6 +96,76 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
                         confirmationCompleted = true,
+                        message = message
+                    )
+                },
+                onFailure = { error ->
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        error = error.message
+                    )
+                }
+            )
+        }
+    }
+    
+    fun resendConfirmationCode() {
+        val username = _uiState.value.pendingUsername ?: return
+        
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            
+            authRepository.resendConfirmationCode(username).fold(
+                onSuccess = { message ->
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        message = message
+                    )
+                },
+                onFailure = { error ->
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        error = error.message
+                    )
+                }
+            )
+        }
+    }
+    
+    fun forgotPassword(username: String) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            
+            authRepository.forgotPassword(username).fold(
+                onSuccess = { message ->
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        needsPasswordReset = true,
+                        pendingResetUsername = username,
+                        message = message
+                    )
+                },
+                onFailure = { error ->
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        error = error.message
+                    )
+                }
+            )
+        }
+    }
+    
+    fun resetPassword(confirmationCode: String, newPassword: String) {
+        val username = _uiState.value.pendingResetUsername ?: return
+        
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            
+            authRepository.resetPassword(username, confirmationCode, newPassword).fold(
+                onSuccess = { message ->
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        passwordResetCompleted = true,
                         message = message
                     )
                 },
@@ -163,6 +249,32 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
         )
     }
     
+    fun cancelRegistration() {
+        viewModelScope.launch {
+            // 未完了の登録状態をクリア
+            authRepository.clearPendingConfirmation()
+            _uiState.value = _uiState.value.copy(
+                needsConfirmation = false,
+                pendingUsername = null,
+                error = null,
+                message = null
+            )
+        }
+    }
+    
+    fun cancelPasswordReset() {
+        viewModelScope.launch {
+            // 未完了のパスワードリセット状態をクリア
+            authRepository.clearPendingPasswordReset()
+            _uiState.value = _uiState.value.copy(
+                needsPasswordReset = false,
+                pendingResetUsername = null,
+                error = null,
+                message = null
+            )
+        }
+    }
+    
     fun getAccessToken(): String? {
         return authRepository.getAccessToken()
     }
@@ -173,7 +285,10 @@ data class AuthUiState(
     val isAuthenticated: Boolean = false,
     val needsConfirmation: Boolean = false,
     val confirmationCompleted: Boolean = false,
+    val needsPasswordReset: Boolean = false,
+    val passwordResetCompleted: Boolean = false,
     val pendingUsername: String? = null,
+    val pendingResetUsername: String? = null,
     val error: String? = null,
     val message: String? = null
 )

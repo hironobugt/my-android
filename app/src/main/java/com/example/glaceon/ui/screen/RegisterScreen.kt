@@ -38,7 +38,9 @@ fun RegisterScreen(
     
     // Handle back navigation for confirmation screen
     BackHandler(enabled = uiState.needsConfirmation) {
-        authViewModel.resetRegistrationState()
+        // 認証コード入力画面から戻る場合、状態は保持する
+        // ユーザーが明示的にキャンセルした場合のみクリア
+        onNavigateToLogin()
     }
     
     Column(
@@ -88,6 +90,30 @@ fun RegisterScreen(
                 } else {
                     Text("Confirm")
                 }
+            }
+            
+            Spacer(modifier = Modifier.height(12.dp))
+            
+            OutlinedButton(
+                onClick = {
+                    authViewModel.resendConfirmationCode()
+                },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !uiState.isLoading
+            ) {
+                Text("Resend Confirmation Code")
+            }
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            TextButton(
+                onClick = {
+                    authViewModel.cancelRegistration()
+                    onNavigateToLogin()
+                },
+                enabled = !uiState.isLoading
+            ) {
+                Text("Cancel Registration")
             }
         } else {
             // Registration form

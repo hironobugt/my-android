@@ -82,6 +82,83 @@ class AuthRepository(private val context: Context) {
         }
     }
 
+    suspend fun resendConfirmationCode(username: String): Result<String> {
+        return try {
+            // Simulate network delay
+            delay(500)
+            
+            val pendingUsername = prefs.getString("pending_confirmation", null)
+            val user = mockUsers[username]
+            
+            when {
+                user == null -> Result.failure(Exception("User not found"))
+                user.isConfirmed -> Result.failure(Exception("User is already confirmed"))
+                pendingUsername != username -> Result.failure(Exception("No pending confirmation for this user"))
+                else -> {
+                    // In real implementation, this would call the API
+                    // For mock, we just return success message
+                    Result.success("Verification code resent. Please check your email.")
+                }
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun forgotPassword(username: String): Result<String> {
+        return try {
+            // Simulate network delay
+            delay(1000)
+            
+            val user = mockUsers[username]
+            
+            when {
+                user == null -> Result.failure(Exception("User not found"))
+                !user.isConfirmed -> Result.failure(Exception("User account is not confirmed"))
+                else -> {
+                    // Save pending password reset
+                    prefs.edit().putString("pending_password_reset", username).apply()
+                    Result.success("Password reset code sent to your email. Please check your inbox.")
+                }
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun resetPassword(username: String, confirmationCode: String, newPassword: String): Result<String> {
+        return try {
+            // Simulate network delay
+            delay(1000)
+            
+            val pendingResetUsername = prefs.getString("pending_password_reset", null)
+            val user = mockUsers[username]
+            
+            when {
+                user == null -> Result.failure(Exception("User not found"))
+                pendingResetUsername != username -> Result.failure(Exception("No pending password reset for this user"))
+                confirmationCode != "123456" -> Result.failure(Exception("Invalid verification code")) // Mock code
+                newPassword.length < 8 -> Result.failure(Exception("Password must be at least 8 characters long"))
+                !isValidPassword(newPassword) -> Result.failure(Exception("Password must contain at least one uppercase letter, one lowercase letter, and one number"))
+                else -> {
+                    // Update password
+                    mockUsers[username] = user.copy(password = newPassword)
+                    prefs.edit().remove("pending_password_reset").apply()
+                    Result.success("Password reset successfully. You can now sign in with your new password.")
+                }
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    private fun isValidPassword(password: String): Boolean {
+        val hasUpperCase = password.any { it.isUpperCase() }
+        val hasLowerCase = password.any { it.isLowerCase() }
+        val hasDigit = password.any { it.isDigit() }
+        return hasUpperCase && hasLowerCase && hasDigit
+    }
+
     suspend fun signIn(username: String, password: String): Result<String> {
         return try {
             // Simulate network delay
@@ -181,5 +258,21 @@ class AuthRepository(private val context: Context) {
 
     fun isLoggedIn(): Boolean {
         return getAccessToken() != null
+    }
+    
+    fun getPendingConfirmation(): String? {
+        return prefs.getString("pending_confirmation", null)
+    }
+    
+    fun getPendingPasswordReset(): String? {
+        return prefs.getString("pending_password_reset", null)
+    }
+    
+    fun clearPendingConfirmation() {
+        prefs.edit().remove("pending_confirmation").apply()
+    }
+    
+    fun clearPendingPasswordReset() {
+        prefs.edit().remove("pending_password_reset").apply()
     }
 }

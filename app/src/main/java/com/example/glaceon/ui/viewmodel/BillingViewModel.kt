@@ -41,6 +41,8 @@ data class Usage(
         val storageGB: Double,
         val uploadCount: Int,
         val restoreCount: Int,
+        val uploadGB: Double = 0.0,
+        val restoreGB: Double = 0.0,
         val totalCost: Double,
         val costs: Map<String, Double>
 )
@@ -171,6 +173,8 @@ class BillingViewModel(application: Application) : AndroidViewModel(application)
                                                 storageGB = usageData.usage.storageGB,
                                                 uploadCount = usageData.usage.uploadCount,
                                                 restoreCount = usageData.usage.restoreCount,
+                                                uploadGB = usageData.usage.uploadGB,
+                                                restoreGB = usageData.usage.restoreGB,
                                                 totalCost = usageData.totalCost,
                                                 costs = usageData.costs
                                         )

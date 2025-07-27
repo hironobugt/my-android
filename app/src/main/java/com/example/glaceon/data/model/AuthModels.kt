@@ -13,6 +13,23 @@ data class RegisterRequest(
     val familyName: String? = null
 )
 
+data class ResendConfirmationRequest(
+    val action: String = "resend",
+    val username: String
+)
+
+data class ForgotPasswordRequest(
+    val action: String = "forgot-password",
+    val username: String
+)
+
+data class ResetPasswordRequest(
+    val action: String = "reset-password",
+    val username: String,
+    val confirmationCode: String,
+    val newPassword: String
+)
+
 data class AuthResponse(
     val accessToken: String,
     val refreshToken: String,

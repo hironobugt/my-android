@@ -64,10 +64,10 @@
     <string name="restore_fee">Restore Fee</string>
     <string name="loading_cost_data">Loading cost data...</string>
     <string name="pricing_structure">Pricing Structure</string>
-    <string name="base_fee_price">$5.00/month</string>
-    <string name="storage_price">$0.01/GB/month</string>
-    <string name="upload_price">$0.05/time</string>
-    <string name="restore_price">$0.10/time</string>
+    <string name="base_fee_price">$3.00/month</string>
+    <string name="storage_price">$0.002/GB/month</string>
+    <string name="upload_price">$0.01/GB</string>
+    <string name="restore_price">$0.05/GB</string>
     <string name="base_fee_price_desc">Basic service usage fee</string>
     <string name="storage_price_desc">Charged based on stored file capacity</string>
     <string name="upload_price_desc">Charged per file upload</string>

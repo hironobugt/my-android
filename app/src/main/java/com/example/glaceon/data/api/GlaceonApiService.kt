@@ -9,6 +9,15 @@ interface GlaceonApiService {
     @POST("auth/register")
     suspend fun register(@Body request: RegisterRequest): Response<AuthResponse>
     
+    @POST("auth/register")
+    suspend fun resendConfirmationCode(@Body request: ResendConfirmationRequest): Response<AuthResponse>
+    
+    @POST("auth/register")
+    suspend fun forgotPassword(@Body request: ForgotPasswordRequest): Response<AuthResponse>
+    
+    @POST("auth/register")
+    suspend fun resetPassword(@Body request: ResetPasswordRequest): Response<AuthResponse>
+    
     @POST("archive/upload")
     suspend fun uploadFile(
         @Header("Authorization") token: String,

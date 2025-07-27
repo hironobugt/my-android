@@ -14,6 +14,16 @@ import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.automirrored.filled.InsertDriveFile
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.height
+import androidx.compose.material.icons.filled.AudioFile
+import androidx.compose.material.icons.filled.VideoFile
+import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -47,6 +57,9 @@ fun ArchiveListScreen(
     val uiState by archiveViewModel.uiState.collectAsState()
     val archives by archiveViewModel.archives.collectAsState()
     val currentUser by authViewModel.currentUser.collectAsState()
+    
+    // Pull to refresh state
+    val pullRefreshState = rememberPullToRefreshState()
 
     var showUploadDialog by remember { mutableStateOf(false) }
     var selectedFileUri by remember { mutableStateOf<Uri?>(null) }
@@ -110,7 +123,17 @@ fun ArchiveListScreen(
                 }
             }
     ) { paddingValues ->
-        Column(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
+        PullToRefreshBox(
+            isRefreshing = uiState.isLoading,
+            onRefresh = {
+                authViewModel.getAccessToken()?.let { token ->
+                    archiveViewModel.loadArchives(token, refresh = true)
+                }
+            },
+            state = pullRefreshState,
+            modifier = Modifier.fillMaxSize().padding(paddingValues)
+        ) {
+        Column(modifier = Modifier.fillMaxSize()) {
             // User info
             currentUser?.let { user ->
                 Card(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
@@ -135,7 +158,7 @@ fun ArchiveListScreen(
                 }
             }
 
-            // Archive list
+            // Archive list with infinite scroll
             LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(16.dp),
@@ -146,17 +169,40 @@ fun ArchiveListScreen(
                             archive = archive,
                             archiveViewModel = archiveViewModel,
                             authViewModel = authViewModel,
-                            onRestore = { archiveId ->
+                            onRestore = { archiveId: String ->
                                 authViewModel.getAccessToken()?.let { token ->
                                     archiveViewModel.restoreArchive(token, archiveId)
                                 }
                             },
-                            onDelete = { archiveId ->
+                            onDelete = { archiveId: String ->
                                 authViewModel.getAccessToken()?.let { token ->
                                     archiveViewModel.deleteArchive(token, archiveId)
                                 }
                             }
                     )
+                }
+                
+                // Load more indicator and trigger
+                if (uiState.hasMore) {
+                    item {
+                        LaunchedEffect(Unit) {
+                            // Trigger load more when this item becomes visible
+                            authViewModel.getAccessToken()?.let { token ->
+                                archiveViewModel.loadMoreArchives(token)
+                            }
+                        }
+                        
+                        if (uiState.isLoadingMore) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                CircularProgressIndicator()
+                            }
+                        }
+                    }
                 }
 
                 if (archives.isEmpty() && !uiState.isLoading) {
@@ -188,7 +234,8 @@ fun ArchiveListScreen(
                 }
             }
         }
-    }
+        } // PullToRefreshBox closing brace
+    } // Scaffold closing brace
 
     // Upload dialog
     if (showUploadDialog && selectedFileUri != null) {
@@ -198,7 +245,7 @@ fun ArchiveListScreen(
                     showUploadDialog = false
                     selectedFileUri = null
                 },
-                onUpload = { fileName, description, category ->
+                onUpload = { fileName: String, description: String, category: String ->
                     authViewModel.getAccessToken()?.let { token ->
                         archiveViewModel.uploadFile(
                                 token = token,
@@ -410,3 +457,4 @@ fun StatusChip(status: ArchiveStatus?) {
             colors = AssistChipDefaults.assistChipColors(labelColor = color)
     )
 }
+
