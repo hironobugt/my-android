@@ -28,6 +28,10 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        
+        // Start file monitoring service for auto-upload
+        com.example.glaceon.service.FileMonitorService.startService(this)
+        
         setContent { GlaceonTheme { GlaceonApp() } }
     }
 }
