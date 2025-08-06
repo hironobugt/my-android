@@ -3,6 +3,11 @@ package com.example.glaceon.data.repository
 import android.content.Context
 import android.content.SharedPreferences
 import com.example.glaceon.data.model.User
+import com.example.glaceon.data.model.AuthRequest
+import com.example.glaceon.data.model.AuthResponse
+import com.example.glaceon.data.model.UserData
+import com.example.glaceon.data.api.GlaceonApiService
+import com.example.glaceon.config.AppConfig
 import kotlinx.coroutines.delay
 
 class AuthRepository(private val context: Context) {
@@ -10,17 +15,7 @@ class AuthRepository(private val context: Context) {
     private val prefs: SharedPreferences =
             context.getSharedPreferences("auth_prefs", Context.MODE_PRIVATE)
     
-    // Mock user database for development
-    private val mockUsers = mutableMapOf<String, MockUser>()
-    
-    data class MockUser(
-        val username: String,
-        val email: String,
-        val password: String,
-        val givenName: String?,
-        val familyName: String?,
-        val isConfirmed: Boolean = false
-    )
+    private val apiService = GlaceonApiService.create()
 
     suspend fun signUp(
             username: String,
@@ -30,28 +25,23 @@ class AuthRepository(private val context: Context) {
             familyName: String? = null
     ): Result<String> {
         return try {
-            // Simulate network delay
-            delay(1000)
+            val request = AuthRequest(
+                action = "register",
+                username = username,
+                password = password,
+                email = email,
+                givenName = givenName,
+                familyName = familyName
+            )
             
-            // Check if user already exists
-            if (mockUsers.containsKey(username)) {
-                Result.failure(Exception("User already exists"))
-            } else {
-                // Create mock user
-                val mockUser = MockUser(
-                    username = username,
-                    email = email,
-                    password = password,
-                    givenName = givenName,
-                    familyName = familyName,
-                    isConfirmed = false
-                )
-                mockUsers[username] = mockUser
-                
+            val response = apiService.auth(request)
+            
+            if (response.success) {
                 // Save pending confirmation
                 prefs.edit().putString("pending_confirmation", username).apply()
-                
-                Result.success("Confirmation required")
+                Result.success(response.message ?: "Registration successful. Please check your email for verification code.")
+            } else {
+                Result.failure(Exception(response.error ?: "Registration failed"))
             }
         } catch (e: Exception) {
             Result.failure(e)
@@ -60,22 +50,20 @@ class AuthRepository(private val context: Context) {
 
     suspend fun confirmSignUp(username: String, confirmationCode: String): Result<String> {
         return try {
-            // Simulate network delay
-            delay(500)
+            val request = AuthRequest(
+                action = "confirm",
+                username = username,
+                confirmationCode = confirmationCode
+            )
             
-            val pendingUsername = prefs.getString("pending_confirmation", null)
+            val response = apiService.auth(request)
             
-            if (pendingUsername != username) {
-                Result.failure(Exception("No pending confirmation for this user"))
-            } else if (confirmationCode != "123456") { // Mock confirmation code
-                Result.failure(Exception("Invalid confirmation code"))
+            if (response.success) {
+                // Clear pending confirmation
+                prefs.edit().remove("pending_confirmation").apply()
+                Result.success(response.message ?: "Account confirmed successfully")
             } else {
-                // Confirm the user
-                mockUsers[username]?.let { user ->
-                    mockUsers[username] = user.copy(isConfirmed = true)
-                    prefs.edit().remove("pending_confirmation").apply()
-                    Result.success("Account confirmed")
-                } ?: Result.failure(Exception("User not found"))
+                Result.failure(Exception(response.error ?: "Confirmation failed"))
             }
         } catch (e: Exception) {
             Result.failure(e)
@@ -84,21 +72,17 @@ class AuthRepository(private val context: Context) {
 
     suspend fun resendConfirmationCode(username: String): Result<String> {
         return try {
-            // Simulate network delay
-            delay(500)
+            val request = AuthRequest(
+                action = "resend",
+                username = username
+            )
             
-            val pendingUsername = prefs.getString("pending_confirmation", null)
-            val user = mockUsers[username]
+            val response = apiService.auth(request)
             
-            when {
-                user == null -> Result.failure(Exception("User not found"))
-                user.isConfirmed -> Result.failure(Exception("User is already confirmed"))
-                pendingUsername != username -> Result.failure(Exception("No pending confirmation for this user"))
-                else -> {
-                    // In real implementation, this would call the API
-                    // For mock, we just return success message
-                    Result.success("Verification code resent. Please check your email.")
-                }
+            if (response.success) {
+                Result.success(response.message ?: "Verification code resent. Please check your email.")
+            } else {
+                Result.failure(Exception(response.error ?: "Failed to resend verification code"))
             }
         } catch (e: Exception) {
             Result.failure(e)
@@ -107,19 +91,19 @@ class AuthRepository(private val context: Context) {
 
     suspend fun forgotPassword(username: String): Result<String> {
         return try {
-            // Simulate network delay
-            delay(1000)
+            val request = AuthRequest(
+                action = "forgot-password",
+                username = username
+            )
             
-            val user = mockUsers[username]
+            val response = apiService.auth(request)
             
-            when {
-                user == null -> Result.failure(Exception("User not found"))
-                !user.isConfirmed -> Result.failure(Exception("User account is not confirmed"))
-                else -> {
-                    // Save pending password reset
-                    prefs.edit().putString("pending_password_reset", username).apply()
-                    Result.success("Password reset code sent to your email. Please check your inbox.")
-                }
+            if (response.success) {
+                // Save pending password reset
+                prefs.edit().putString("pending_password_reset", username).apply()
+                Result.success(response.message ?: "Password reset code sent to your email. Please check your inbox.")
+            } else {
+                Result.failure(Exception(response.error ?: "Failed to send password reset code"))
             }
         } catch (e: Exception) {
             Result.failure(e)
@@ -128,24 +112,21 @@ class AuthRepository(private val context: Context) {
 
     suspend fun resetPassword(username: String, confirmationCode: String, newPassword: String): Result<String> {
         return try {
-            // Simulate network delay
-            delay(1000)
+            val request = AuthRequest(
+                action = "reset-password",
+                username = username,
+                confirmationCode = confirmationCode,
+                newPassword = newPassword
+            )
             
-            val pendingResetUsername = prefs.getString("pending_password_reset", null)
-            val user = mockUsers[username]
+            val response = apiService.auth(request)
             
-            when {
-                user == null -> Result.failure(Exception("User not found"))
-                pendingResetUsername != username -> Result.failure(Exception("No pending password reset for this user"))
-                confirmationCode != "123456" -> Result.failure(Exception("Invalid verification code")) // Mock code
-                newPassword.length < 8 -> Result.failure(Exception("Password must be at least 8 characters long"))
-                !isValidPassword(newPassword) -> Result.failure(Exception("Password must contain at least one uppercase letter, one lowercase letter, and one number"))
-                else -> {
-                    // Update password
-                    mockUsers[username] = user.copy(password = newPassword)
-                    prefs.edit().remove("pending_password_reset").apply()
-                    Result.success("Password reset successfully. You can now sign in with your new password.")
-                }
+            if (response.success) {
+                // Clear pending password reset
+                prefs.edit().remove("pending_password_reset").apply()
+                Result.success(response.message ?: "Password reset successfully. You can now sign in with your new password.")
+            } else {
+                Result.failure(Exception(response.error ?: "Password reset failed"))
             }
         } catch (e: Exception) {
             Result.failure(e)
@@ -161,30 +142,29 @@ class AuthRepository(private val context: Context) {
 
     suspend fun signIn(username: String, password: String): Result<String> {
         return try {
-            // Simulate network delay
-            delay(1000)
+            val request = AuthRequest(
+                action = "login",
+                username = username,
+                password = password
+            )
             
-            val user = mockUsers[username]
+            val response = apiService.auth(request)
             
-            when {
-                user == null -> Result.failure(Exception("User not found"))
-                !user.isConfirmed -> Result.failure(Exception("Account not confirmed"))
-                user.password != password -> Result.failure(Exception("Invalid password"))
-                else -> {
-                    // Generate mock token
-                    val mockToken = "mock-jwt-token-${System.currentTimeMillis()}"
-                    saveAccessToken(mockToken)
-                    
-                    // Save current user info
-                    prefs.edit().apply {
-                        putString("current_user_id", user.username)
-                        putString("current_username", user.username)
-                        putString("current_email", user.email)
-                        apply()
-                    }
-                    
-                    Result.success(mockToken)
+            if (response.success && response.token != null && response.user != null) {
+                // Save access token
+                saveAccessToken(response.token)
+                
+                // Save current user info
+                prefs.edit().apply {
+                    putString("current_user_id", response.user.userId)
+                    putString("current_username", response.user.username)
+                    putString("current_email", response.user.email)
+                    apply()
                 }
+                
+                Result.success(response.token)
+            } else {
+                Result.failure(Exception(response.error ?: "Login failed"))
             }
         } catch (e: Exception) {
             Result.failure(e)

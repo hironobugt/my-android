@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.glaceon.data.model.User
+import com.example.glaceon.data.model.UserData
 import com.example.glaceon.data.repository.AuthRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -240,13 +241,21 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
     }
     
     fun resetRegistrationState() {
-        _uiState.value = _uiState.value.copy(
-            needsConfirmation = false,
-            confirmationCompleted = false,
-            pendingUsername = null,
-            error = null,
-            message = null
-        )
+        viewModelScope.launch {
+            // Clear saved pending states
+            authRepository.clearPendingConfirmation()
+            authRepository.clearPendingPasswordReset()
+            
+            _uiState.value = _uiState.value.copy(
+                needsConfirmation = false,
+                confirmationCompleted = false,
+                pendingUsername = null,
+                needsPasswordReset = false,
+                pendingResetUsername = null,
+                error = null,
+                message = null
+            )
+        }
     }
     
     fun cancelRegistration() {

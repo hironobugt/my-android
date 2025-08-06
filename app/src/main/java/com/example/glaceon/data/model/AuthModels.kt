@@ -1,53 +1,52 @@
 package com.example.glaceon.data.model
 
-data class LoginRequest(
-    val username: String,
-    val password: String
+import com.google.gson.annotations.SerializedName
+
+// Auth Request models
+data class AuthRequest(
+    val action: String,
+    val username: String? = null,
+    val password: String? = null,
+    val email: String? = null,
+    val givenName: String? = null,
+    val familyName: String? = null,
+    val confirmationCode: String? = null,
+    val newPassword: String? = null
 )
 
-data class RegisterRequest(
+// Auth Response models
+data class AuthResponse(
+    val message: String? = null,
+    val error: String? = null,
+    val token: String? = null,
+    val user: UserData? = null,
+    // Registration specific fields
+    val userId: String? = null,
+    val username: String? = null,
+    val email: String? = null,
+    val confirmationRequired: Boolean? = null,
+    val confirmed: Boolean? = null,
+    val passwordReset: Boolean? = null,
+    val nextStep: String? = null
+) {
+    // Helper property to determine if the response is successful
+    val success: Boolean
+        get() = error == null
+}
+
+data class UserData(
+    val userId: String,
     val username: String,
     val email: String,
-    val password: String,
-    val givenName: String? = null,
-    val familyName: String? = null
+    val emailVerified: Boolean = false
 )
 
-data class ResendConfirmationRequest(
-    val action: String = "resend",
-    val username: String
-)
-
-data class ForgotPasswordRequest(
-    val action: String = "forgot-password",
-    val username: String
-)
-
-data class ResetPasswordRequest(
-    val action: String = "reset-password",
-    val username: String,
-    val confirmationCode: String,
-    val newPassword: String
-)
-
-data class DeleteAccountRequest(
-    val action: String = "delete-account",
-    val confirmPassword: String,
-    val reason: String? = null
-)
-
-data class AuthResponse(
-    val accessToken: String,
-    val refreshToken: String,
-    val idToken: String,
-    val expiresIn: Long
-)
-
+// User model for UI layer
 data class User(
     val userId: String,
     val username: String,
     val email: String,
+    val emailVerified: Boolean = false,
     val givenName: String? = null,
-    val familyName: String? = null,
-    val emailVerified: Boolean = false
+    val familyName: String? = null
 )
