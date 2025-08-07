@@ -15,6 +15,7 @@ data class BillingRequest(
 )
 
 data class UsageRequest(
+    val action: String,
     val month: String? = null
 )
 
@@ -106,8 +107,8 @@ data class InvoiceData(
 )
 
 data class UsageResponse(
-    val success: Boolean,
-    val data: UsageData? = null,
+    val usage: UsageInfo? = null,
+    val costs: Map<String, Double>? = null,
     val error: String? = null
 )
 
@@ -121,12 +122,15 @@ data class UsageData(
 data class UsageInfo(
     val userId: String,
     val periodMonth: String,
-    val storageGB: Double,
+    val storageGB: Double = 0.0,
     val uploadCount: Int,
-    val restoreCount: Int,
+    val restoreCount: Int = 0,
     val uploadGB: Double = 0.0,
     val restoreGB: Double = 0.0,
-    val totalCost: Double
+    val apiRequestCount: Int = 0,
+    val thumbnailViews: Int = 0,
+    val lastUpdated: String? = null,
+    val totalCost: Double = 0.0
 )
 
 data class PricingInfo(

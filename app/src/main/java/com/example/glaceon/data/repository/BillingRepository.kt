@@ -45,15 +45,35 @@ class BillingRepository(private val context: Context) {
     suspend fun getUsage(token: String, month: String? = null): Result<UsageData> = withContext(Dispatchers.IO) {
         try {
             val authToken = if (token.startsWith("Bearer ")) token else "Bearer $token"
-            val request = UsageRequest(month = month)
+            val request = UsageRequest(action = "get-current-usage", month = month)
             val response = api.getUsage(authToken, request)
             
             if (response.isSuccessful) {
                 response.body()?.let { usageResponse ->
-                    if (usageResponse.success && usageResponse.data != null) {
-                        Result.success(usageResponse.data)
+                    if (usageResponse.error != null) {
+                        Result.failure(Exception(usageResponse.error))
                     } else {
-                        Result.failure(Exception(usageResponse.error ?: "Unknown usage error"))
+                        // usage APIレスポンスをUsageDataに変換
+                        val usage = usageResponse.usage ?: UsageInfo(
+                            userId = "",
+                            periodMonth = "",
+                            uploadCount = 0
+                        )
+                        val costs = usageResponse.costs ?: emptyMap()
+                        val totalCost = costs.values.sum()
+                        
+                        val usageData = UsageData(
+                            usage = usage.copy(totalCost = totalCost),
+                            costs = costs,
+                            totalCost = totalCost,
+                            pricing = PricingInfo(
+                                storage = 0.012,
+                                upload = 0.09,
+                                restore = 0.40,
+                                baseFee = 3.00
+                            )
+                        )
+                        Result.success(usageData)
                     }
                 } ?: Result.failure(Exception("Empty response"))
             } else {
