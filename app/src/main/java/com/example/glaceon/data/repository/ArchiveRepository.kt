@@ -253,15 +253,15 @@ class ArchiveRepository(private val context: Context) {
     suspend fun getThumbnail(
         token: String,
         archiveId: String
-    ): Result<ByteArray> = withContext(Dispatchers.IO) {
+    ): Result<ThumbnailResponse> = withContext(Dispatchers.IO) {
         try {
             val authToken = if (token.startsWith("Bearer ")) token else "Bearer $token"
             val response = api.getThumbnail(authToken, archiveId)
             
             if (response.isSuccessful) {
-                response.body()?.let { responseBody ->
-                    val thumbnailBytes = responseBody.bytes()
-                    Result.success(thumbnailBytes)
+                response.body()?.let { thumbnailResponse ->
+                    Log.d("ArchiveRepository", "Thumbnail URL received: ${thumbnailResponse.thumbnailUrl}")
+                    Result.success(thumbnailResponse)
                 } ?: Result.failure(Exception("Empty thumbnail response"))
             } else {
                 when (response.code()) {
@@ -271,12 +271,19 @@ class ArchiveRepository(private val context: Context) {
                 }
             }
         } catch (e: java.net.ConnectException) {
-            // Backend not available, return mock thumbnail for development
-            Log.d("ArchiveRepository", "Backend not available, generating mock thumbnail for $archiveId")
+            // Backend not available, return mock thumbnail URL for development
+            Log.d("ArchiveRepository", "Backend not available, returning mock thumbnail URL for $archiveId")
             
-            // Generate a simple colored bitmap as mock thumbnail
-            val mockThumbnailBytes = generateMockThumbnail(archiveId)
-            Result.success(mockThumbnailBytes)
+            Result.success(
+                ThumbnailResponse(
+                    thumbnailUrl = "https://via.placeholder.com/200x200/4CAF50/FFFFFF?text=MOCK",
+                    fileType = "image",
+                    cacheInfo = CacheInfo(
+                        maxAge = 3600,
+                        provider = "Mock"
+                    )
+                )
+            )
         } catch (e: Exception) {
             Result.failure(Exception("Network error: ${e.message}"))
         }

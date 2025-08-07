@@ -25,9 +25,9 @@ class ArchiveViewModel(application: Application) : AndroidViewModel(application)
     private val _archives = MutableStateFlow<List<ArchiveItem>>(emptyList())
     val archives: StateFlow<List<ArchiveItem>> = _archives.asStateFlow()
     
-    // サムネイルキャッシュ
-    private val _thumbnailCache = MutableStateFlow<Map<String, Bitmap>>(emptyMap())
-    val thumbnailCache: StateFlow<Map<String, Bitmap>> = _thumbnailCache.asStateFlow()
+    // サムネイルURLキャッシュ
+    private val _thumbnailUrlCache = MutableStateFlow<Map<String, String>>(emptyMap())
+    val thumbnailUrlCache: StateFlow<Map<String, String>> = _thumbnailUrlCache.asStateFlow()
     
     fun loadArchives(token: String, refresh: Boolean = false) {
         viewModelScope.launch {
@@ -221,37 +221,27 @@ class ArchiveViewModel(application: Application) : AndroidViewModel(application)
     
     fun loadThumbnail(token: String, archiveId: String) {
         // キャッシュにある場合は何もしない
-        if (_thumbnailCache.value.containsKey(archiveId)) {
-            Log.d("ArchiveViewModel", "Thumbnail already cached for $archiveId")
+        if (_thumbnailUrlCache.value.containsKey(archiveId)) {
+            Log.d("ArchiveViewModel", "Thumbnail URL already cached for $archiveId")
             return
         }
         
-        Log.d("ArchiveViewModel", "Loading thumbnail for $archiveId")
+        Log.d("ArchiveViewModel", "Loading thumbnail URL for $archiveId")
         viewModelScope.launch {
             archiveRepository.getThumbnail(token, archiveId).fold(
-                onSuccess = { thumbnailBytes ->
-                    Log.d("ArchiveViewModel", "Thumbnail received for $archiveId, size: ${thumbnailBytes.size} bytes")
-                    try {
-                        val bitmap = BitmapFactory.decodeByteArray(thumbnailBytes, 0, thumbnailBytes.size)
-                        if (bitmap != null) {
-                            Log.d("ArchiveViewModel", "Thumbnail decoded successfully for $archiveId: ${bitmap.width}x${bitmap.height}")
-                            _thumbnailCache.value = _thumbnailCache.value + (archiveId to bitmap)
-                        } else {
-                            Log.e("ArchiveViewModel", "Failed to decode thumbnail bitmap for $archiveId")
-                        }
-                    } catch (e: Exception) {
-                        Log.e("ArchiveViewModel", "Exception decoding thumbnail for $archiveId: ${e.message}")
-                    }
+                onSuccess = { thumbnailResponse ->
+                    Log.d("ArchiveViewModel", "Thumbnail URL received for $archiveId: ${thumbnailResponse.thumbnailUrl}")
+                    _thumbnailUrlCache.value = _thumbnailUrlCache.value + (archiveId to thumbnailResponse.thumbnailUrl)
                 },
                 onFailure = { error ->
-                    Log.e("ArchiveViewModel", "Failed to load thumbnail for $archiveId: ${error.message}")
+                    Log.e("ArchiveViewModel", "Failed to load thumbnail URL for $archiveId: ${error.message}")
                 }
             )
         }
     }
     
-    fun getThumbnail(archiveId: String): Bitmap? {
-        return _thumbnailCache.value[archiveId]
+    fun getThumbnailUrl(archiveId: String): String? {
+        return _thumbnailUrlCache.value[archiveId]
     }
 }
 

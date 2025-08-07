@@ -56,7 +56,7 @@ interface GlaceonApiService {
     suspend fun getThumbnail(
         @Header("Authorization") token: String,
         @Path("archiveId") archiveId: String
-    ): Response<okhttp3.ResponseBody>
+    ): Response<ThumbnailResponse>
     
     // Billing API endpoints
     @POST("billing")

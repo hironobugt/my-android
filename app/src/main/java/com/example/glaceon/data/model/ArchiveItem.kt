@@ -74,3 +74,14 @@ data class RestoreResponse(
     val contentType: String? = null,
     val fileSize: Long? = null
 )
+
+data class ThumbnailResponse(
+    val thumbnailUrl: String,
+    val fileType: String,
+    val cacheInfo: CacheInfo? = null
+)
+
+data class CacheInfo(
+    val maxAge: Long,
+    val provider: String
+)

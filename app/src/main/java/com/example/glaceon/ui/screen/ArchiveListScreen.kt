@@ -33,6 +33,8 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.glaceon.data.model.ArchiveItem
 import com.example.glaceon.data.model.ArchiveStatus
@@ -288,11 +290,12 @@ fun ArchiveItemCard(
         onDelete: (String) -> Unit
 ) {
     var showDeleteDialog by remember { mutableStateOf(false) }
-    val thumbnailCache by archiveViewModel.thumbnailCache.collectAsState()
+    val thumbnailUrlCache by archiveViewModel.thumbnailUrlCache.collectAsState()
+    val context = LocalContext.current
 
     // サムネイルがある場合は読み込む
     LaunchedEffect(archive.archiveId, archive.hasThumbnail) {
-        if (archive.hasThumbnail && !thumbnailCache.containsKey(archive.archiveId)) {
+        if (archive.hasThumbnail && !thumbnailUrlCache.containsKey(archive.archiveId)) {
             authViewModel.getAccessToken()?.let { token ->
                 archiveViewModel.loadThumbnail(token, archive.archiveId)
             }
@@ -314,10 +317,13 @@ fun ArchiveItemCard(
                                         .background(MaterialTheme.colorScheme.surfaceVariant),
                         contentAlignment = Alignment.Center
                 ) {
-                    val thumbnail = thumbnailCache[archive.archiveId]
-                    if (thumbnail != null) {
-                        Image(
-                                bitmap = thumbnail.asImageBitmap(),
+                    val thumbnailUrl = thumbnailUrlCache[archive.archiveId]
+                    if (thumbnailUrl != null) {
+                        AsyncImage(
+                                model = ImageRequest.Builder(context)
+                                        .data(thumbnailUrl)
+                                        .crossfade(true)
+                                        .build(),
                                 contentDescription = "Thumbnail",
                                 modifier = Modifier.fillMaxSize(),
                                 contentScale = ContentScale.Crop
