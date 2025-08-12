@@ -43,7 +43,9 @@ fun BillingScreen(
 
     LaunchedEffect(Unit) {
         authViewModel.getAccessToken()?.let { token ->
-            viewModel.loadBillingInfo(token)
+            authViewModel.currentUser.value?.let { user ->
+                viewModel.loadBillingInfo(token, user.email, user.username)
+            } ?: viewModel.loadBillingInfo(token)
             viewModel.loadUsage(token)
         }
     }
@@ -95,7 +97,8 @@ fun BillingScreen(
                                 viewModel.cancelSubscription(token)
                             }
                         },
-                        viewModel = viewModel
+                        viewModel = viewModel,
+                        authViewModel = authViewModel
                 )
             }
 
@@ -130,7 +133,8 @@ fun BillingScreen(
 fun SubscriptionCard(
         billingInfo: com.example.glaceon.ui.viewmodel.BillingInfo?,
         onCancelSubscription: () -> Unit,
-        viewModel: BillingViewModel
+        viewModel: BillingViewModel,
+        authViewModel: com.example.glaceon.ui.viewmodel.AuthViewModel
 ) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
@@ -215,7 +219,18 @@ fun SubscriptionCard(
 
                         Spacer(modifier = Modifier.height(12.dp))
 
-                        Button(onClick = { /* TODO: Navigate to subscription creation */}) {
+                        Button(onClick = { 
+                            authViewModel.getAccessToken()?.let { token ->
+                                authViewModel.currentUser.value?.let { user ->
+                                    // 顧客作成とサブスクリプション作成を順次実行
+                                    viewModel.setupCustomerAndCreateSubscription(
+                                        token = token,
+                                        email = user.email,
+                                        name = user.username
+                                    )
+                                }
+                            }
+                        }) {
                             Icon(Icons.Default.Add, contentDescription = null)
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(stringResource(R.string.start_subscription))

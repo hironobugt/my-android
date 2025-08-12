@@ -139,3 +139,12 @@ data class PricingInfo(
     val restore: Double,
     val baseFee: Double
 )
+
+data class UsageEvent(
+    val id: String,
+    val userId: String,
+    val eventType: String,
+    val timestamp: String,
+    val eventData: Map<String, Any>,
+    val cost: Double = 0.0
+)

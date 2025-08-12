@@ -79,7 +79,7 @@ class BillingViewModel(application: Application) : AndroidViewModel(application)
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
 
-    fun loadBillingInfo(token: String) {
+    fun loadBillingInfo(token: String, userEmail: String? = null, userName: String? = null) {
         viewModelScope.launch {
             _isLoading.value = true
             _error.value = null
@@ -152,8 +152,14 @@ class BillingViewModel(application: Application) : AndroidViewModel(application)
                                 _isLoading.value = false
                             },
                             onFailure = { error ->
-                                _error.value = error.message
-                                _isLoading.value = false
+                                // Customer not foundの場合、自動的に顧客を作成
+                                if (error.message?.contains("Customer not found") == true && 
+                                    userEmail != null && userName != null) {
+                                    setupCustomer(token, userEmail, userName)
+                                } else {
+                                    _error.value = error.message
+                                    _isLoading.value = false
+                                }
                             }
                     )
         }
@@ -230,12 +236,43 @@ class BillingViewModel(application: Application) : AndroidViewModel(application)
             billingRepository
                     .setupCustomer(token, email, name)
                     .fold(
-                            onSuccess = { customerId -> loadBillingInfo(token) },
+                            onSuccess = { customerId -> 
+                                loadBillingInfo(token)
+                            },
                             onFailure = { error ->
                                 _error.value = error.message
                                 _isLoading.value = false
                             }
                     )
+        }
+    }
+    
+    fun setupCustomerAndCreateSubscription(token: String, email: String, name: String, priceId: String = "price_1QYqJhJhVGJhVGJh") {
+        viewModelScope.launch {
+            _isLoading.value = true
+            _error.value = null
+
+            // まず顧客を作成
+            billingRepository.setupCustomer(token, email, name)
+                .fold(
+                    onSuccess = { customerId ->
+                        // 顧客作成成功後、サブスクリプションを作成
+                        billingRepository.createSubscription(token, priceId)
+                            .fold(
+                                onSuccess = { subscriptionId ->
+                                    loadBillingInfo(token)
+                                },
+                                onFailure = { error ->
+                                    _error.value = "Failed to create subscription: ${error.message}"
+                                    _isLoading.value = false
+                                }
+                            )
+                    },
+                    onFailure = { error ->
+                        _error.value = "Failed to setup customer: ${error.message}"
+                        _isLoading.value = false
+                    }
+                )
         }
     }
 
@@ -305,6 +342,62 @@ class BillingViewModel(application: Application) : AndroidViewModel(application)
 
     fun formatCurrency(amountCents: Int): String {
         return String.format("$%.2f", amountCents / 100.0)
+    }
+
+    fun removePaymentMethod(token: String, paymentMethodId: String) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            _error.value = null
+
+            billingRepository.removePaymentMethod(token, paymentMethodId)
+                .fold(
+                    onSuccess = { message -> 
+                        loadBillingInfo(token)
+                    },
+                    onFailure = { error ->
+                        _error.value = error.message
+                        _isLoading.value = false
+                    }
+                )
+        }
+    }
+
+    fun getUsageHistory(token: String, months: Int = 12) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            _error.value = null
+
+            billingRepository.getUsageHistory(token, months)
+                .fold(
+                    onSuccess = { historyData ->
+                        // 使用量履歴データを処理
+                        _isLoading.value = false
+                    },
+                    onFailure = { error ->
+                        _error.value = error.message
+                        _isLoading.value = false
+                    }
+                )
+        }
+    }
+
+    fun getUsageEvents(token: String, limit: Int = 50) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            _error.value = null
+
+            billingRepository.getUsageEvents(token, limit)
+                .fold(
+                    onSuccess = { eventsData ->
+                        // 使用量イベントデータを処理
+                        _isLoading.value = false
+                    },
+                    onFailure = { error ->
+                        _error.value = error.message
+                        _isLoading.value = false
+                    }
+                )
+        }
     }
 
     fun deleteAccount(token: String, confirmPassword: String, reason: String?) {
