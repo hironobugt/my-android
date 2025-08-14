@@ -247,6 +247,41 @@ class BillingViewModel(application: Application) : AndroidViewModel(application)
         }
     }
     
+    fun createPaymentIntent(token: String, onSuccess: (String) -> Unit) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            _error.value = null
+
+            billingRepository
+                    .createPaymentIntent(token)
+                    .fold(
+                            onSuccess = { clientSecret -> 
+                                _isLoading.value = false
+                                onSuccess(clientSecret)
+                            },
+                            onFailure = { error ->
+                                _error.value = error.message
+                                _isLoading.value = false
+                            }
+                    )
+        }
+    }
+    
+    fun getStripeConfig(onSuccess: (String) -> Unit) {
+        viewModelScope.launch {
+            billingRepository
+                    .getStripeConfig()
+                    .fold(
+                            onSuccess = { publishableKey -> 
+                                onSuccess(publishableKey)
+                            },
+                            onFailure = { error ->
+                                _error.value = error.message
+                            }
+                    )
+        }
+    }
+    
     fun setupCustomerAndCreateSubscription(token: String, email: String, name: String, priceId: String = "price_1QYqJhJhVGJhVGJh") {
         viewModelScope.launch {
             _isLoading.value = true

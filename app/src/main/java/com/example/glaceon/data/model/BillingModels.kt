@@ -35,6 +35,7 @@ data class BillingData(
     val paymentMethods: List<PaymentMethodData>? = null,
     val subscriptionId: String? = null,
     val clientSecret: String? = null,
+    val publishableKey: String? = null,
     val status: String? = null,
     val paymentMethodId: String? = null,
     val invoices: List<InvoiceData>? = null,
