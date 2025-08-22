@@ -57,18 +57,30 @@ fun PaymentMethodScreen(
             }
             is PaymentSheetResult.Failed -> {
                 // エラー処理 - 具体的なエラーメッセージを表示
-                // result.error?.message を使用してエラー詳細を取得可能
+                println("PaymentMethodScreen: PaymentSheet失敗: ${result.error}")
+                viewModel.clearError()
             }
         }
     }
 
-    // Stripe設定を取得して初期化
+    // Stripe設定の初期化状態を管理
+    var isStripeInitialized by remember { mutableStateOf(false) }
+    
+    // Stripe設定を直接初期化（一時的にハードコード）
     LaunchedEffect(Unit) {
-        // Stripe設定を取得
-        viewModel.getStripeConfig { publishableKey ->
+        println("PaymentMethodScreen: Stripe設定を初期化中...")
+        try {
+            // 実際のStripe公開可能キーを直接使用
+            val publishableKey = "pk_test_51RrIiS3jPENBfOzdq69mzsLq5tvHNOU5Xphn36HstnfQL2gxRUVcjKbvZsUxRfxfm5IfKosn8Bvtjc3QrfgM26N000jqWHmyBG"
             PaymentConfiguration.init(context, publishableKey)
+            println("PaymentMethodScreen: PaymentConfiguration初期化完了")
+            isStripeInitialized = true
+        } catch (e: Exception) {
+            println("PaymentMethodScreen: PaymentConfiguration初期化エラー: ${e.message}")
+            isStripeInitialized = false
         }
         
+        // billing情報をロード（認証必要）
         authViewModel.getAccessToken()?.let { token ->
             authViewModel.currentUser.value?.let { user ->
                 viewModel.loadBillingInfo(token, user.email, user.username)
@@ -138,31 +150,87 @@ fun PaymentMethodScreen(
         // カード追加ボタン
         Button(
             onClick = {
+                println("PaymentMethodScreen: カード追加ボタンがクリックされました")
+                
+                // Stripeが初期化されているかチェック
+                if (!isStripeInitialized) {
+                    println("PaymentMethodScreen: Stripeが初期化されていません")
+                    return@Button
+                }
+                
                 authViewModel.getAccessToken()?.let { token ->
-                    viewModel.createPaymentIntent(token) { clientSecret ->
-                        val configuration = PaymentSheet.Configuration(
-                            merchantDisplayName = "Glacier Archive",
-                            customer = billingInfo?.customer?.stripeCustomerId?.let { customerId ->
-                                PaymentSheet.CustomerConfiguration(
-                                    id = customerId,
-                                    ephemeralKeySecret = "" // 空文字列でも動作する
-                                )
+                    authViewModel.currentUser.value?.let { user ->
+                        println("PaymentMethodScreen: トークンとユーザー情報を取得しました")
+                        
+                        // まず顧客が存在するか確認し、存在しない場合は作成
+                        if (billingInfo?.customer?.stripeCustomerId == null) {
+                            println("PaymentMethodScreen: 顧客が存在しないため、まず顧客を作成します")
+                            viewModel.setupCustomer(token, user.email, user.username)
+                            // 顧客作成後は自動的にbilling情報が再読み込みされるので、
+                            // 次回ボタンを押した時にカード登録が実行される
+                            return@let
+                        }
+                        
+                        // 顧客が存在する場合、Setup Intentを作成
+                        viewModel.createPaymentIntent(token) { clientSecret ->
+                            println("PaymentMethodScreen: clientSecret取得: $clientSecret")
+                            
+                            // PaymentConfigurationが初期化されているか再確認
+                            try {
+                                PaymentConfiguration.getInstance(context)
+                                println("PaymentMethodScreen: PaymentConfiguration確認OK")
+                            } catch (e: Exception) {
+                                println("PaymentMethodScreen: PaymentConfiguration未初期化: ${e.message}")
+                                return@createPaymentIntent
                             }
-                        )
-                        paymentSheetLauncher.launch(
-                            PaymentSheetContract.Args.createSetupIntentArgs(
-                                clientSecret = clientSecret,
-                                config = configuration
+                            
+                            val configuration = PaymentSheet.Configuration(
+                                merchantDisplayName = "Glacier Archive"
                             )
-                        )
+                            println("PaymentMethodScreen: PaymentSheetを起動します")
+                            try {
+                                paymentSheetLauncher.launch(
+                                    PaymentSheetContract.Args.createSetupIntentArgs(
+                                        clientSecret = clientSecret,
+                                        config = configuration
+                                    )
+                                )
+                                println("PaymentMethodScreen: PaymentSheet起動成功")
+                            } catch (e: Exception) {
+                                println("PaymentMethodScreen: PaymentSheet起動エラー: ${e.message}")
+                            }
+                        }
+                    } ?: run {
+                        println("PaymentMethodScreen: ユーザー情報が取得できませんでした")
                     }
+                } ?: run {
+                    println("PaymentMethodScreen: トークンが取得できませんでした")
                 }
             },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            enabled = !isLoading && isStripeInitialized
         ) {
-            Icon(Icons.Default.Add, contentDescription = null)
+            if (isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(16.dp),
+                    strokeWidth = 2.dp
+                )
+            } else if (!isStripeInitialized) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(16.dp),
+                    strokeWidth = 2.dp
+                )
+            } else {
+                Icon(Icons.Default.Add, contentDescription = null)
+            }
             Spacer(modifier = Modifier.width(8.dp))
-            Text("新しいカードを追加")
+            Text(
+                when {
+                    !isStripeInitialized -> "Stripe設定を初期化中..."
+                    billingInfo?.customer?.stripeCustomerId == null -> "顧客情報を設定してカードを追加"
+                    else -> "新しいカードを追加"
+                }
+            )
         }
 
         Spacer(modifier = Modifier.height(16.dp))

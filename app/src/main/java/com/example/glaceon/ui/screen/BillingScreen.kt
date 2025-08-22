@@ -97,6 +97,7 @@ fun BillingScreen(
                                 viewModel.cancelSubscription(token)
                             }
                         },
+                        onNavigateToPaymentMethods = onNavigateToPaymentMethods,
                         viewModel = viewModel,
                         authViewModel = authViewModel
                 )
@@ -133,6 +134,7 @@ fun BillingScreen(
 fun SubscriptionCard(
         billingInfo: com.example.glaceon.ui.viewmodel.BillingInfo?,
         onCancelSubscription: () -> Unit,
+        onNavigateToPaymentMethods: () -> Unit,
         viewModel: BillingViewModel,
         authViewModel: com.example.glaceon.ui.viewmodel.AuthViewModel
 ) {
@@ -219,21 +221,44 @@ fun SubscriptionCard(
 
                         Spacer(modifier = Modifier.height(12.dp))
 
-                        Button(onClick = { 
-                            authViewModel.getAccessToken()?.let { token ->
-                                authViewModel.currentUser.value?.let { user ->
-                                    // 顧客作成とサブスクリプション作成を順次実行
-                                    viewModel.setupCustomerAndCreateSubscription(
-                                        token = token,
-                                        email = user.email,
-                                        name = user.username
-                                    )
-                                }
+                        // サブスクリプション開始の前に支払い方法が必要
+                        if (billingInfo?.paymentMethods?.isEmpty() != false) {
+                            // 支払い方法がない場合：まず支払い方法を追加
+                            Button(onClick = onNavigateToPaymentMethods) {
+                                Icon(Icons.Default.CreditCard, contentDescription = null)
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("支払い方法を追加")
                             }
-                        }) {
-                            Icon(Icons.Default.Add, contentDescription = null)
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(stringResource(R.string.start_subscription))
+                            
+                            Spacer(modifier = Modifier.height(8.dp))
+                            
+                            Text(
+                                text = "サブスクリプションを開始するには、まず支払い方法を追加してください",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.outline
+                            )
+                        } else {
+                            // 支払い方法がある場合：サブスクリプションを開始
+                            Button(onClick = { 
+                                authViewModel.getAccessToken()?.let { token ->
+                                    authViewModel.currentUser.value?.let { user ->
+                                        // 顧客作成とサブスクリプション作成を順次実行
+                                        viewModel.setupCustomerAndCreateSubscription(token, user.email, user.username)
+                                    }
+                                }
+                            }) {
+                                Icon(Icons.Default.Add, contentDescription = null)
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(stringResource(R.string.start_subscription))
+                            }
+                            
+                            Spacer(modifier = Modifier.height(8.dp))
+                            
+                            Text(
+                                text = "月額 $3.00 のベーシックプランに登録されます",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.outline
+                            )
                         }
                     }
         }

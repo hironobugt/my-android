@@ -36,10 +36,12 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.ViewModelProvider
 import com.example.glaceon.data.model.ArchiveItem
 import com.example.glaceon.data.model.ArchiveStatus
 import com.example.glaceon.ui.viewmodel.ArchiveViewModel
 import com.example.glaceon.ui.viewmodel.AuthViewModel
+import com.example.glaceon.ui.viewmodel.BillingViewModel
 import com.example.glaceon.util.FileUtils
 import kotlinx.coroutines.flow.first
 import kotlinx.datetime.TimeZone
@@ -53,15 +55,24 @@ fun ArchiveListScreen(
         onNavigateToBilling: () -> Unit,
         onSignOut: () -> Unit,
         authViewModel: AuthViewModel = viewModel(),
-        archiveViewModel: ArchiveViewModel = viewModel()
+        archiveViewModel: ArchiveViewModel = viewModel(),
+        billingViewModel: BillingViewModel = viewModel(
+            factory = ViewModelProvider.AndroidViewModelFactory.getInstance(
+                LocalContext.current.applicationContext as android.app.Application
+            )
+        )
 ) {
     val context = LocalContext.current
     val uiState by archiveViewModel.uiState.collectAsState()
     val archives by archiveViewModel.archives.collectAsState()
     val currentUser by authViewModel.currentUser.collectAsState()
+    val billingInfo by billingViewModel.billingInfo.collectAsState()
     
     // Pull to refresh state
     val pullRefreshState = rememberPullToRefreshState()
+    
+    // サブスクリプション状態の確認
+    val hasActiveSubscription = billingInfo?.subscription?.status == "active"
 
     var showUploadDialog by remember { mutableStateOf(false) }
     var selectedFileUri by remember { mutableStateOf<Uri?>(null) }
@@ -76,9 +87,16 @@ fun ArchiveListScreen(
                 }
             }
 
-    // Load archives when screen loads
+    // Load archives and billing info when screen loads
     LaunchedEffect(Unit) {
-        authViewModel.getAccessToken()?.let { token -> archiveViewModel.loadArchives(token) }
+        authViewModel.getAccessToken()?.let { token ->
+            // billing情報をロード
+            authViewModel.currentUser.value?.let { user ->
+                billingViewModel.loadBillingInfo(token, user.email, user.username)
+            }
+            // アーカイブをロード（サブスクリプション状態に関係なく表示）
+            archiveViewModel.loadArchives(token)
+        }
     }
 
     // Auto-start file monitoring service if auto upload is enabled
@@ -120,8 +138,14 @@ fun ArchiveListScreen(
                 )
             },
             floatingActionButton = {
-                FloatingActionButton(onClick = { filePickerLauncher.launch("*/*") }) {
-                    Icon(Icons.Default.Add, contentDescription = "Upload File")
+                if (hasActiveSubscription) {
+                    FloatingActionButton(onClick = { filePickerLauncher.launch("*/*") }) {
+                        Icon(Icons.Default.Add, contentDescription = "Upload File")
+                    }
+                } else {
+                    FloatingActionButton(onClick = onNavigateToBilling) {
+                        Icon(Icons.Default.Payment, contentDescription = "Subscribe to Upload")
+                    }
                 }
             }
     ) { paddingValues ->
@@ -151,6 +175,50 @@ fun ArchiveListScreen(
                         )
                     }
                 }
+            }
+
+            // サブスクリプション案内カード
+            if (!hasActiveSubscription) {
+                Card(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer
+                    )
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                Icons.Default.Payment,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "サブスクリプションが必要です",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "ファイルのアップロードと管理機能を利用するには、サブスクリプションに登録してください。",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Button(
+                            onClick = onNavigateToBilling,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(Icons.Default.Payment, contentDescription = null)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("サブスクリプションを開始")
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(16.dp))
             }
 
             // Loading indicator

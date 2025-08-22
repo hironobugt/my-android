@@ -282,7 +282,7 @@ class BillingViewModel(application: Application) : AndroidViewModel(application)
         }
     }
     
-    fun setupCustomerAndCreateSubscription(token: String, email: String, name: String, priceId: String = "price_1QYqJhJhVGJhVGJh") {
+    fun setupCustomerAndCreateSubscription(token: String, email: String, name: String, priceId: String = "monthly_basic_plan") {
         viewModelScope.launch {
             _isLoading.value = true
             _error.value = null
@@ -292,6 +292,7 @@ class BillingViewModel(application: Application) : AndroidViewModel(application)
                 .fold(
                     onSuccess = { customerId ->
                         // 顧客作成成功後、サブスクリプションを作成
+                        // バックエンドでprice_dataを使用するため、任意の識別子を送信
                         billingRepository.createSubscription(token, priceId)
                             .fold(
                                 onSuccess = { subscriptionId ->

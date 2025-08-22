@@ -65,6 +65,12 @@ interface GlaceonApiService {
         @Body request: BillingRequest
     ): Response<BillingResponse>
     
+    // Billing API endpoint without authentication (for Stripe config)
+    @POST("billing")
+    suspend fun billingActionNoAuth(
+        @Body request: BillingRequest
+    ): Response<BillingResponse>
+    
     @POST("usage")
     suspend fun getUsage(
         @Header("Authorization") token: String,

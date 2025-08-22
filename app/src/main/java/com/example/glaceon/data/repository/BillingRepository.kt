@@ -169,7 +169,7 @@ class BillingRepository(private val context: Context) {
     suspend fun getStripeConfig(): Result<String> = withContext(Dispatchers.IO) {
         try {
             val request = BillingRequest(action = "get-stripe-config")
-            val response = api.billingAction("", request) // 認証不要
+            val response = api.billingActionNoAuth(request)
             
             if (response.isSuccessful) {
                 response.body()?.let { billingResponse ->
