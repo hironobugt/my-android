@@ -174,15 +174,19 @@ class BillingViewModel(application: Application) : AndroidViewModel(application)
                     .getUsage(token, month)
                     .fold(
                             onSuccess = { usageData ->
+                                // 安全にUsageオブジェクトを作成
+                                val safeCosts = usageData.costs.mapValues { (_, value) -> value ?: 0.0 }
+                                val safeTotalCost = usageData.totalCost ?: 0.0
+                                
                                 _usage.value =
                                         Usage(
-                                                storageGB = usageData.usage.storageGB,
-                                                uploadCount = usageData.usage.uploadCount,
-                                                restoreCount = usageData.usage.restoreCount,
-                                                uploadGB = usageData.usage.uploadGB,
-                                                restoreGB = usageData.usage.restoreGB,
-                                                totalCost = usageData.totalCost,
-                                                costs = usageData.costs
+                                                storageGB = usageData.usage.storageGB ?: 0.0,
+                                                uploadCount = usageData.usage.uploadCount ?: 0,
+                                                restoreCount = usageData.usage.restoreCount ?: 0,
+                                                uploadGB = usageData.usage.uploadGB ?: 0.0,
+                                                restoreGB = usageData.usage.restoreGB ?: 0.0,
+                                                totalCost = safeTotalCost,
+                                                costs = safeCosts
                                         )
                                 _isLoading.value = false
                             },
@@ -374,6 +378,10 @@ class BillingViewModel(application: Application) : AndroidViewModel(application)
 
     fun formatCurrency(amount: Double): String {
         return String.format("$%.2f", amount)
+    }
+    
+    fun formatCurrency(amount: Double?): String {
+        return String.format("$%.2f", amount ?: 0.0)
     }
 
     fun formatCurrency(amountCents: Int): String {

@@ -110,6 +110,8 @@ data class InvoiceData(
 data class UsageResponse(
     val usage: UsageInfo? = null,
     val costs: Map<String, Double>? = null,
+    val totalCost: Double? = null,
+    val pricing: PricingInfo? = null,
     val error: String? = null
 )
 
@@ -123,15 +125,15 @@ data class UsageData(
 data class UsageInfo(
     val userId: String,
     val periodMonth: String,
-    val storageGB: Double = 0.0,
-    val uploadCount: Int,
-    val restoreCount: Int = 0,
-    val uploadGB: Double = 0.0,
-    val restoreGB: Double = 0.0,
-    val apiRequestCount: Int = 0,
-    val thumbnailViews: Int = 0,
+    val storageGB: Double? = 0.0,
+    val uploadCount: Int? = 0,
+    val restoreCount: Int? = 0,
+    val uploadGB: Double? = 0.0,
+    val restoreGB: Double? = 0.0,
+    val apiRequestCount: Int? = 0,
+    val thumbnailViews: Int? = 0,
     val lastUpdated: String? = null,
-    val totalCost: Double = 0.0
+    val totalCost: Double? = 0.0
 )
 
 data class PricingInfo(

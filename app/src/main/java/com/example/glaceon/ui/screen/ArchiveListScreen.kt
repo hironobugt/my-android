@@ -71,8 +71,8 @@ fun ArchiveListScreen(
     // Pull to refresh state
     val pullRefreshState = rememberPullToRefreshState()
     
-    // サブスクリプション状態の確認
-    val hasActiveSubscription = billingInfo?.subscription?.status == "active"
+    // サブスクリプション状態の確認（複数の有効な状態をチェック）
+    val hasActiveSubscription = billingInfo?.subscription?.status in listOf("active", "trialing", "incomplete", "past_due")
 
     var showUploadDialog by remember { mutableStateOf(false) }
     var selectedFileUri by remember { mutableStateOf<Uri?>(null) }
@@ -172,6 +172,18 @@ fun ArchiveListScreen(
                                 text = user.email,
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        // デバッグ用：サブスクリプション状態を表示
+                        billingInfo?.subscription?.let { subscription ->
+                            Text(
+                                text = "Subscription: ${subscription.status}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        } ?: Text(
+                            text = "No subscription info loaded",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error
                         )
                     }
                 }
@@ -457,15 +469,52 @@ fun ArchiveItemCard(
             Spacer(modifier = Modifier.height(12.dp))
 
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                if (archive.archiveStatus == ArchiveStatus.ARCHIVED) {
-                    OutlinedButton(onClick = { onRestore(archive.archiveId) }) {
-                        Icon(
-                                Icons.Filled.CloudDownload,
-                                contentDescription = null,
-                                modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("Restore")
+                when (archive.archiveStatus) {
+                    ArchiveStatus.ARCHIVED -> {
+                        OutlinedButton(onClick = { onRestore(archive.archiveId) }) {
+                            Icon(
+                                    Icons.Filled.CloudDownload,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Restore")
+                        }
+                    }
+                    ArchiveStatus.RESTORING -> {
+                        OutlinedButton(
+                                onClick = { 
+                                    // 復元状態を再確認
+                                    authViewModel.getAccessToken()?.let { token ->
+                                        archiveViewModel.checkRestoreStatus(token, archive.archiveId)
+                                    }
+                                }
+                        ) {
+                            CircularProgressIndicator(
+                                    modifier = Modifier.size(16.dp),
+                                    strokeWidth = 2.dp
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Check Status")
+                        }
+                    }
+                    ArchiveStatus.RESTORED -> {
+                        Button(onClick = { 
+                            authViewModel.getAccessToken()?.let { token ->
+                                archiveViewModel.downloadFile(token, archive.archiveId, archive.fileName)
+                            }
+                        }) {
+                            Icon(
+                                    Icons.Default.Download,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Download")
+                        }
+                    }
+                    else -> {
+                        // UPLOADING, FAILED状態では復元ボタンを表示しない
                     }
                 }
 

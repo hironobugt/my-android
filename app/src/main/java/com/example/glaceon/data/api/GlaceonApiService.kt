@@ -46,6 +46,13 @@ interface GlaceonApiService {
         @Path("archiveId") archiveId: String
     ): Response<RestoreResponse>
     
+    @GET("archive/{archiveId}")
+    suspend fun getArchiveStatus(
+        @Header("Authorization") token: String,
+        @Path("archiveId") archiveId: String,
+        @Query("statusOnly") statusOnly: Boolean = true
+    ): Response<RestoreResponse>
+    
     @DELETE("archive/{archiveId}")
     suspend fun deleteArchive(
         @Header("Authorization") token: String,
@@ -57,6 +64,12 @@ interface GlaceonApiService {
         @Header("Authorization") token: String,
         @Path("archiveId") archiveId: String
     ): Response<ThumbnailResponse>
+    
+    @GET("archive/{archiveId}/download")
+    suspend fun downloadFile(
+        @Header("Authorization") token: String,
+        @Path("archiveId") archiveId: String
+    ): Response<DownloadResponse>
     
     // Billing API endpoints
     @POST("billing")

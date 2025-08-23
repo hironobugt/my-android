@@ -85,3 +85,14 @@ data class CacheInfo(
     val maxAge: Long,
     val provider: String
 )
+
+data class DownloadResponse(
+    val status: String,
+    val message: String? = null,
+    val fileName: String? = null,
+    val fileSize: Long? = null,
+    val downloadUrl: String? = null,
+    val content: String? = null, // Base64 encoded file content
+    val contentType: String? = null,
+    val expiresAt: String? = null
+)

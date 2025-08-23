@@ -243,6 +243,74 @@ class ArchiveViewModel(application: Application) : AndroidViewModel(application)
     fun getThumbnailUrl(archiveId: String): String? {
         return _thumbnailUrlCache.value[archiveId]
     }
+    
+    fun downloadFile(token: String, archiveId: String, fileName: String) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            
+            archiveRepository.downloadFile(token, archiveId).fold(
+                onSuccess = { downloadResponse ->
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        message = when (downloadResponse.status) {
+                            "success" -> "File downloaded successfully: $fileName"
+                            "ready" -> "File is ready for download"
+                            "not_ready" -> "File is not ready for download yet. Please wait for restoration to complete."
+                            else -> downloadResponse.message ?: "Download completed"
+                        }
+                    )
+                },
+                onFailure = { error ->
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        error = "Download failed: ${error.message}"
+                    )
+                }
+            )
+        }
+    }
+    
+    fun checkRestoreStatus(token: String, archiveId: String) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            
+            archiveRepository.getArchiveStatus(token, archiveId).fold(
+                onSuccess = { response ->
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        message = when (response.status) {
+                            "restored" -> "File is ready for download!"
+                            "restoring" -> "Restore still in progress. Please check back later."
+                            "restore_initiated" -> "Restore request is being processed."
+                            else -> response.message
+                        }
+                    )
+                    
+                    // Update the specific archive status
+                    _archives.value = _archives.value.map { archive ->
+                        if (archive.archiveId == archiveId) {
+                            archive.copy(
+                                status = when (response.status) {
+                                    "restored" -> "RESTORED"
+                                    "restoring" -> "RESTORING"
+                                    "restore_initiated" -> "RESTORING"
+                                    else -> archive.status
+                                }
+                            )
+                        } else {
+                            archive
+                        }
+                    }
+                },
+                onFailure = { error ->
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        error = "Failed to check restore status: ${error.message}"
+                    )
+                }
+            )
+        }
+    }
 }
 
 data class ArchiveUiState(

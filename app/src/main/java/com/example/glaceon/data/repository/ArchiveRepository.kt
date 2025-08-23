@@ -326,4 +326,130 @@ class ArchiveRepository(private val context: Context) {
         bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 80, stream)
         return stream.toByteArray()
     }
+    
+    suspend fun getArchiveStatus(
+        token: String,
+        archiveId: String
+    ): Result<RestoreResponse> = withContext(Dispatchers.IO) {
+        try {
+            val authToken = if (token.startsWith("Bearer ")) token else "Bearer $token"
+            val response = api.getArchiveStatus(authToken, archiveId)
+            
+            if (response.isSuccessful) {
+                response.body()?.let { restoreResponse ->
+                    Log.d("ArchiveRepository", "Archive status check: ${restoreResponse.status}")
+                    Result.success(restoreResponse)
+                } ?: Result.failure(Exception("Empty status response"))
+            } else {
+                when (response.code()) {
+                    404 -> Result.failure(Exception("Archive not found"))
+                    401 -> Result.failure(Exception("Authentication failed"))
+                    else -> Result.failure(Exception("Failed to check status: ${response.message()}"))
+                }
+            }
+        } catch (e: java.net.ConnectException) {
+            Log.d("ArchiveRepository", "Backend not available, returning mock status")
+            // Mock status response for development
+            Result.success(
+                RestoreResponse(
+                    archiveId = archiveId,
+                    status = "restoring",
+                    message = "Mock: Restore still in progress"
+                )
+            )
+        } catch (e: Exception) {
+            Result.failure(Exception("Network error: ${e.message}"))
+        }
+    }
+
+    suspend fun downloadFile(
+        token: String,
+        archiveId: String
+    ): Result<DownloadResponse> = withContext(Dispatchers.IO) {
+        try {
+            val authToken = if (token.startsWith("Bearer ")) token else "Bearer $token"
+            val response = api.downloadFile(authToken, archiveId)
+            
+            if (response.isSuccessful) {
+                response.body()?.let { downloadResponse ->
+                    Log.d("ArchiveRepository", "Download response: ${downloadResponse.status}")
+                    
+                    // ファイルコンテンツがある場合は自動的にダウンロードフォルダに保存
+                    if (downloadResponse.content != null && downloadResponse.fileName != null) {
+                        try {
+                            saveDownloadedFile(downloadResponse.content, downloadResponse.fileName)
+                            Log.d("ArchiveRepository", "File saved to Downloads folder: ${downloadResponse.fileName}")
+                        } catch (e: Exception) {
+                            Log.e("ArchiveRepository", "Failed to save file: ${e.message}")
+                            return@withContext Result.failure(Exception("Failed to save file: ${e.message}"))
+                        }
+                    }
+                    
+                    Result.success(downloadResponse)
+                } ?: Result.failure(Exception("Empty download response"))
+            } else {
+                when (response.code()) {
+                    404 -> Result.failure(Exception("Archive not found"))
+                    401 -> Result.failure(Exception("Authentication failed"))
+                    409 -> Result.failure(Exception("File is not ready for download yet"))
+                    else -> Result.failure(Exception("Failed to download file: ${response.message()}"))
+                }
+            }
+        } catch (e: java.net.ConnectException) {
+            Log.d("ArchiveRepository", "Backend not available, simulating download")
+            // Mock download response for development
+            Result.success(
+                DownloadResponse(
+                    status = "success",
+                    message = "Mock download completed",
+                    fileName = "mock_file.txt",
+                    fileSize = 1024,
+                    downloadUrl = null,
+                    content = null
+                )
+            )
+        } catch (e: Exception) {
+            Result.failure(Exception("Network error: ${e.message}"))
+        }
+    }
+    
+    private fun saveDownloadedFile(base64Content: String, fileName: String) {
+        try {
+            // Base64デコード
+            val fileBytes = Base64.decode(base64Content, Base64.DEFAULT)
+            
+            // Downloads フォルダに保存
+            val downloadsDir = android.os.Environment.getExternalStoragePublicDirectory(
+                android.os.Environment.DIRECTORY_DOWNLOADS
+            )
+            
+            // ファイル名の重複を避けるためタイムスタンプを追加
+            val timestamp = System.currentTimeMillis()
+            val fileExtension = fileName.substringAfterLast(".", "")
+            val baseName = fileName.substringBeforeLast(".")
+            val uniqueFileName = if (fileExtension.isNotEmpty()) {
+                "${baseName}_downloaded_${timestamp}.${fileExtension}"
+            } else {
+                "${fileName}_downloaded_${timestamp}"
+            }
+            
+            val file = java.io.File(downloadsDir, uniqueFileName)
+            file.writeBytes(fileBytes)
+            
+            Log.d("ArchiveRepository", "Downloaded file saved to: ${file.absolutePath}")
+            
+            // MediaScanConnectionを使用してファイルをメディアストアに追加
+            android.media.MediaScannerConnection.scanFile(
+                context,
+                arrayOf(file.absolutePath),
+                null
+            ) { path, uri ->
+                Log.d("ArchiveRepository", "Media scan completed for downloaded file: $path")
+            }
+            
+        } catch (e: Exception) {
+            Log.e("ArchiveRepository", "Error saving downloaded file: ${e.message}")
+            throw e
+        }
+    }
 }
