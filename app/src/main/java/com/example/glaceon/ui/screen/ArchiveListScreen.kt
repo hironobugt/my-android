@@ -512,6 +512,20 @@ fun ArchiveItemCard(
                             Spacer(modifier = Modifier.width(4.dp))
                             Text("Download")
                         }
+                        
+                        OutlinedButton(onClick = { 
+                            authViewModel.getAccessToken()?.let { token ->
+                                archiveViewModel.rearchiveFile(token, archive.archiveId)
+                            }
+                        }) {
+                            Icon(
+                                    Icons.Default.Archive,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Deep Archive")
+                        }
                     }
                     else -> {
                         // UPLOADING, FAILED状態では復元ボタンを表示しない

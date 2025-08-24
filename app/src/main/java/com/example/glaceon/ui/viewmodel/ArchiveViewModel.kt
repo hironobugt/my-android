@@ -311,6 +311,36 @@ class ArchiveViewModel(application: Application) : AndroidViewModel(application)
             )
         }
     }
+    
+    fun rearchiveFile(token: String, archiveId: String) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            
+            archiveRepository.rearchiveFile(token, archiveId).fold(
+                onSuccess = { response ->
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        message = "ファイルをDeep Archiveに戻しました。ストレージコストが削減されます。"
+                    )
+                    
+                    // Update the specific archive status to ARCHIVED
+                    _archives.value = _archives.value.map { archive ->
+                        if (archive.archiveId == archiveId) {
+                            archive.copy(status = "ARCHIVED")
+                        } else {
+                            archive
+                        }
+                    }
+                },
+                onFailure = { error ->
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        error = "再アーカイブに失敗しました: ${error.message}"
+                    )
+                }
+            )
+        }
+    }
 }
 
 data class ArchiveUiState(

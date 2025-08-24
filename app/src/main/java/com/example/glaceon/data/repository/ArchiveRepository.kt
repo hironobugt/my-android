@@ -371,14 +371,26 @@ class ArchiveRepository(private val context: Context) {
             val response = api.downloadFile(authToken, archiveId)
             
             if (response.isSuccessful) {
-                response.body()?.let { downloadResponse ->
-                    Log.d("ArchiveRepository", "Download response: ${downloadResponse.status}")
+                response.body()?.let { restoreResponse ->
+                    Log.d("ArchiveRepository", "Download response: ${restoreResponse.status}")
+                    
+                    // RestoreResponseをDownloadResponseに変換
+                    val downloadResponse = DownloadResponse(
+                        status = if (restoreResponse.status == "restored") "success" else restoreResponse.status,
+                        message = restoreResponse.message,
+                        fileName = restoreResponse.fileName,
+                        fileSize = restoreResponse.fileSize,
+                        downloadUrl = restoreResponse.downloadUrl,
+                        content = restoreResponse.content,
+                        contentType = restoreResponse.contentType,
+                        expiresAt = restoreResponse.expiresAt
+                    )
                     
                     // ファイルコンテンツがある場合は自動的にダウンロードフォルダに保存
-                    if (downloadResponse.content != null && downloadResponse.fileName != null) {
+                    if (restoreResponse.content != null && restoreResponse.fileName != null) {
                         try {
-                            saveDownloadedFile(downloadResponse.content, downloadResponse.fileName)
-                            Log.d("ArchiveRepository", "File saved to Downloads folder: ${downloadResponse.fileName}")
+                            saveDownloadedFile(restoreResponse.content, restoreResponse.fileName)
+                            Log.d("ArchiveRepository", "File saved to Downloads folder: ${restoreResponse.fileName}")
                         } catch (e: Exception) {
                             Log.e("ArchiveRepository", "Failed to save file: ${e.message}")
                             return@withContext Result.failure(Exception("Failed to save file: ${e.message}"))
@@ -450,6 +462,43 @@ class ArchiveRepository(private val context: Context) {
         } catch (e: Exception) {
             Log.e("ArchiveRepository", "Error saving downloaded file: ${e.message}")
             throw e
+        }
+    }
+    
+    suspend fun rearchiveFile(
+        token: String,
+        archiveId: String
+    ): Result<RestoreResponse> = withContext(Dispatchers.IO) {
+        try {
+            val authToken = if (token.startsWith("Bearer ")) token else "Bearer $token"
+            val response = api.rearchiveFile(authToken, archiveId)
+            
+            if (response.isSuccessful) {
+                response.body()?.let { rearchiveResponse ->
+                    Log.d("ArchiveRepository", "Rearchive response: ${rearchiveResponse.status}")
+                    Result.success(rearchiveResponse)
+                } ?: Result.failure(Exception("Empty rearchive response"))
+            } else {
+                when (response.code()) {
+                    400 -> Result.failure(Exception("File is not currently restored"))
+                    401 -> Result.failure(Exception("Authentication failed"))
+                    404 -> Result.failure(Exception("Archive not found"))
+                    409 -> Result.failure(Exception("Cannot re-archive while restoration is in progress"))
+                    else -> Result.failure(Exception("Failed to re-archive file: ${response.message()}"))
+                }
+            }
+        } catch (e: java.net.ConnectException) {
+            Log.d("ArchiveRepository", "Backend not available, simulating rearchive")
+            // Mock rearchive response for development
+            Result.success(
+                RestoreResponse(
+                    archiveId = archiveId,
+                    status = "archived",
+                    message = "Mock: File moved back to Deep Archive"
+                )
+            )
+        } catch (e: Exception) {
+            Result.failure(Exception("Network error: ${e.message}"))
         }
     }
 }

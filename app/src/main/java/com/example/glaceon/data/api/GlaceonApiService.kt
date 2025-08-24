@@ -65,11 +65,18 @@ interface GlaceonApiService {
         @Path("archiveId") archiveId: String
     ): Response<ThumbnailResponse>
     
-    @GET("archive/{archiveId}/download")
+    @GET("archive/{archiveId}")
     suspend fun downloadFile(
         @Header("Authorization") token: String,
+        @Path("archiveId") archiveId: String,
+        @Query("download") download: Boolean = true
+    ): Response<RestoreResponse>
+    
+    @POST("archive/{archiveId}/rearchive")
+    suspend fun rearchiveFile(
+        @Header("Authorization") token: String,
         @Path("archiveId") archiveId: String
-    ): Response<DownloadResponse>
+    ): Response<RestoreResponse>
     
     // Billing API endpoints
     @POST("billing")
