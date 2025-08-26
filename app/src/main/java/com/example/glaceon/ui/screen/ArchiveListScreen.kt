@@ -468,84 +468,151 @@ fun ArchiveItemCard(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                when (archive.archiveStatus) {
-                    ArchiveStatus.ARCHIVED -> {
-                        OutlinedButton(onClick = { onRestore(archive.archiveId) }) {
+            // ボタンレイアウト - RESTOREDステータスの場合は2行に分ける
+            when (archive.archiveStatus) {
+                ArchiveStatus.ARCHIVED -> {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedButton(
+                            onClick = { onRestore(archive.archiveId) },
+                            modifier = Modifier.weight(1f)
+                        ) {
                             Icon(
-                                    Icons.Filled.CloudDownload,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(16.dp)
+                                Icons.Filled.CloudDownload,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp)
                             )
                             Spacer(modifier = Modifier.width(4.dp))
                             Text("Restore")
                         }
-                    }
-                    ArchiveStatus.RESTORING -> {
+                        
                         OutlinedButton(
-                                onClick = { 
-                                    // 復元状態を再確認
-                                    authViewModel.getAccessToken()?.let { token ->
-                                        archiveViewModel.checkRestoreStatus(token, archive.archiveId)
-                                    }
+                            onClick = { showDeleteDialog = true },
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                contentColor = MaterialTheme.colorScheme.error
+                            ),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Icon(
+                                Icons.Default.Delete,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Delete")
+                        }
+                    }
+                }
+                ArchiveStatus.RESTORING -> {
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedButton(
+                            onClick = { 
+                                // 復元状態を再確認
+                                authViewModel.getAccessToken()?.let { token ->
+                                    archiveViewModel.checkRestoreStatus(token, archive.archiveId)
                                 }
+                            },
+                            modifier = Modifier.weight(1f)
                         ) {
                             CircularProgressIndicator(
-                                    modifier = Modifier.size(16.dp),
-                                    strokeWidth = 2.dp
+                                modifier = Modifier.size(16.dp),
+                                strokeWidth = 2.dp
                             )
                             Spacer(modifier = Modifier.width(4.dp))
                             Text("Check Status")
                         }
-                    }
-                    ArchiveStatus.RESTORED -> {
-                        Button(onClick = { 
-                            authViewModel.getAccessToken()?.let { token ->
-                                archiveViewModel.downloadFile(token, archive.archiveId, archive.fileName)
-                            }
-                        }) {
+                        
+                        OutlinedButton(
+                            onClick = { showDeleteDialog = true },
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                contentColor = MaterialTheme.colorScheme.error
+                            ),
+                            modifier = Modifier.weight(1f)
+                        ) {
                             Icon(
+                                Icons.Default.Delete,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Delete")
+                        }
+                    }
+                }
+                ArchiveStatus.RESTORED -> {
+                    // RESTOREDステータスは2行に分けて表示
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        // 1行目：ダウンロードとDeep Archive
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Button(
+                                onClick = { 
+                                    authViewModel.getAccessToken()?.let { token ->
+                                        archiveViewModel.downloadFile(token, archive.archiveId, archive.fileName)
+                                    }
+                                },
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Icon(
                                     Icons.Default.Download,
                                     contentDescription = null,
                                     modifier = Modifier.size(16.dp)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("Download")
-                        }
-                        
-                        OutlinedButton(onClick = { 
-                            authViewModel.getAccessToken()?.let { token ->
-                                archiveViewModel.rearchiveFile(token, archive.archiveId)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Download")
                             }
-                        }) {
-                            Icon(
+                            
+                            OutlinedButton(
+                                onClick = { 
+                                    authViewModel.getAccessToken()?.let { token ->
+                                        archiveViewModel.rearchiveFile(token, archive.archiveId)
+                                    }
+                                },
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                Icon(
                                     Icons.Default.Archive,
                                     contentDescription = null,
                                     modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text("Archive")
+                            }
+                        }
+                        
+                        // 2行目：削除ボタン
+                        OutlinedButton(
+                            onClick = { showDeleteDialog = true },
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                contentColor = MaterialTheme.colorScheme.error
+                            ),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(
+                                Icons.Default.Delete,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp)
                             )
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text("Deep Archive")
+                            Text("Delete")
                         }
                     }
-                    else -> {
-                        // UPLOADING, FAILED状態では復元ボタンを表示しない
-                    }
                 }
-
-                OutlinedButton(
+                else -> {
+                    // UPLOADING, FAILED状態では削除ボタンのみ
+                    OutlinedButton(
                         onClick = { showDeleteDialog = true },
-                        colors =
-                                ButtonDefaults.outlinedButtonColors(
-                                        contentColor = MaterialTheme.colorScheme.error
-                                )
-                ) {
-                    Icon(
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = MaterialTheme.colorScheme.error
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(
                             Icons.Default.Delete,
                             contentDescription = null,
                             modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("Delete")
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Delete")
+                    }
                 }
             }
         }
