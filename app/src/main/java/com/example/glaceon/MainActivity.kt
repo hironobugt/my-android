@@ -19,10 +19,12 @@ import com.example.glaceon.ui.screen.ForgotPasswordScreen
 import com.example.glaceon.ui.screen.InvoiceScreen
 import com.example.glaceon.ui.screen.LoginScreen
 import com.example.glaceon.ui.screen.PaymentMethodScreen
+import com.example.glaceon.ui.screen.PermissionScreen
 import com.example.glaceon.ui.screen.RegisterScreen
 import com.example.glaceon.ui.screen.UsageScreen
 import com.example.glaceon.ui.theme.GlaceonTheme
 import com.example.glaceon.ui.viewmodel.AuthViewModel
+import com.example.glaceon.ui.viewmodel.PermissionViewModel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -40,10 +42,20 @@ class MainActivity : ComponentActivity() {
 fun GlaceonApp() {
     val navController = rememberNavController()
     val authViewModel: AuthViewModel = viewModel()
+    val permissionViewModel: PermissionViewModel = viewModel()
     val authState by authViewModel.uiState.collectAsState()
+    val permissionState by permissionViewModel.permissionState.collectAsState()
+    val context = androidx.compose.ui.platform.LocalContext.current
 
-    // Determine start destination based on auth state
+    // 初回起動時に権限チェックを実行
+    LaunchedEffect(Unit) {
+        permissionViewModel.checkPermissions(context)
+    }
+
+    // Determine start destination based on auth and permission state
     val startDestination = when {
+        !permissionState.permissionCheckComplete -> "permissions" // 権限チェック中は権限画面を表示
+        !permissionState.hasRequiredPermissions -> "permissions"
         authState.isAuthenticated -> "archive_list"
         authState.needsConfirmation -> "register" // 認証コード入力画面に戻る
         authState.needsPasswordReset -> "forgot_password" // パスワードリセット画面に戻る
@@ -51,6 +63,24 @@ fun GlaceonApp() {
     }
 
     NavHost(navController = navController, startDestination = startDestination) {
+        composable("permissions") {
+            PermissionScreen(
+                onPermissionsGranted = {
+                    // 権限が許可されたら認証状態に応じて適切な画面に遷移
+                    val nextDestination = when {
+                        authState.isAuthenticated -> "archive_list"
+                        authState.needsConfirmation -> "register"
+                        authState.needsPasswordReset -> "forgot_password"
+                        else -> "login"
+                    }
+                    navController.navigate(nextDestination) {
+                        popUpTo("permissions") { inclusive = true }
+                    }
+                },
+                permissionViewModel = permissionViewModel
+            )
+        }
+
         composable("login") {
             LoginScreen(
                     onNavigateToRegister = {

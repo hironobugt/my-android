@@ -465,40 +465,5 @@ class ArchiveRepository(private val context: Context) {
         }
     }
     
-    suspend fun rearchiveFile(
-        token: String,
-        archiveId: String
-    ): Result<RestoreResponse> = withContext(Dispatchers.IO) {
-        try {
-            val authToken = if (token.startsWith("Bearer ")) token else "Bearer $token"
-            val response = api.rearchiveFile(authToken, archiveId)
-            
-            if (response.isSuccessful) {
-                response.body()?.let { rearchiveResponse ->
-                    Log.d("ArchiveRepository", "Rearchive response: ${rearchiveResponse.status}")
-                    Result.success(rearchiveResponse)
-                } ?: Result.failure(Exception("Empty rearchive response"))
-            } else {
-                when (response.code()) {
-                    400 -> Result.failure(Exception("File is not currently restored"))
-                    401 -> Result.failure(Exception("Authentication failed"))
-                    404 -> Result.failure(Exception("Archive not found"))
-                    409 -> Result.failure(Exception("Cannot re-archive while restoration is in progress"))
-                    else -> Result.failure(Exception("Failed to re-archive file: ${response.message()}"))
-                }
-            }
-        } catch (e: java.net.ConnectException) {
-            Log.d("ArchiveRepository", "Backend not available, simulating rearchive")
-            // Mock rearchive response for development
-            Result.success(
-                RestoreResponse(
-                    archiveId = archiveId,
-                    status = "archived",
-                    message = "Mock: File moved back to Deep Archive"
-                )
-            )
-        } catch (e: Exception) {
-            Result.failure(Exception("Network error: ${e.message}"))
-        }
-    }
+
 }

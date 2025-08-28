@@ -560,22 +560,7 @@ fun ArchiveItemCard(
                                 Text("Download")
                             }
                             
-                            OutlinedButton(
-                                onClick = { 
-                                    authViewModel.getAccessToken()?.let { token ->
-                                        archiveViewModel.rearchiveFile(token, archive.archiveId)
-                                    }
-                                },
-                                modifier = Modifier.weight(1f)
-                            ) {
-                                Icon(
-                                    Icons.Default.Archive,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text("Archive")
-                            }
+
                         }
                         
                         // 2行目：削除ボタン
